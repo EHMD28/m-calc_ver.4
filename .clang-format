@@ -1,0 +1,6 @@
+BasedOnStyle: LLVM
+IndentWidth: 4
+ColumnLimit: 80
+AllowShortEnumsOnASingleLine: false
+AllowShortBlocksOnASingleLine: SBS_Empty
+AllowShortCaseExpressionOnASingleLine: true
