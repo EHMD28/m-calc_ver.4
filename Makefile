@@ -1,4 +1,4 @@
-WFLAGS=-Wall -Wextra -pedantic -std=c11 -fsanitize=address -Werror
+WFLAGS=-Wall -Wextra -pedantic -std=c11 -fsanitize=address -Wno-unused-function -Werror
 
 .PHONY: tests clean
 

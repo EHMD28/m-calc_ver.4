@@ -25,13 +25,13 @@
 
     // ! WARNING: this function should not be called directly. Instead, use corresponding macro
     // * Newline is included as part of function.
-    static inline void mlog_log(const char* msg) {
+    static void mlog_log(const char* msg) {
         printf("[LOG]: %s\n", msg);
     }
 
     // ! WARNING: this function should not be called directly. Instead, use corresponding macro.
     // * Newline is included as part of function.
-    static inline void mlog_logf(const char* msg, ...) {
+    static void mlog_logf(const char* msg, ...) {
         va_list args;
         va_start(args, msg);
         printf("[LOG]: ");
@@ -42,13 +42,13 @@
 
     // ! WARNING: this function should not be called directly. Instead, use corresponding macro.
     // * Newline is included as part of function.
-    static inline void mlog_logc(const char* color, const char* msg) {
+    static void mlog_logc(const char* color, const char* msg) {
         printf("%s[LOG]: %s%s\n", color, msg, NO_COLOR);
     }
 
     // ! WARNING: this function should not be called directly. Instead, use corresponding macro.
     // * Newline is included as part of function.
-    static inline void mlog_logfc(const char* color, const char* msg, ...) {
+    static void mlog_logfc(const char* color, const char* msg, ...) {
         va_list args;
         va_start(args, msg);
         printf("%s[LOG]: ", color);
@@ -58,7 +58,7 @@
 
     }
 
-    static inline void mlog_array_int(int arr[], size_t size) {
+    static void mlog_array_int(int arr[], size_t size) {
         printf("[LOG]: [");
         for (size_t i = 0; i < size; i++) {
             printf("%d%s", arr[i], (i == (size - 1) ? "" : ", "));
@@ -66,7 +66,7 @@
         puts("]");
     }
 
-    static inline void mlog_array_char(char arr[], size_t size) {
+    static void mlog_array_char(char arr[], size_t size) {
         printf("[LOG]: [");
         for (size_t i = 0; i < size; i++) {
             printf("%c%s", arr[i], (i == (size - 1) ? "" : ", "));
@@ -74,7 +74,7 @@
         puts("]");
     }
 
-    static inline void mlog_array_double(double arr[], size_t size) {
+    static void mlog_array_double(double arr[], size_t size) {
         printf("[LOG]: [");
         for (size_t i = 0; i < size; i++) {
             printf("%lf%s", arr[i], (i == (size - 1) ? "" : ", "));
@@ -82,7 +82,7 @@
         puts("]");
     }
 
-    static inline void mlog_array_str(char* arr[], size_t size) {
+    static void mlog_array_str(char* arr[], size_t size) {
         printf("[LOG]: [");
         for (size_t i = 0; i < size; i++) {
             printf("%s%s", arr[i], (i == (size - 1) ? "" : ", "));
@@ -94,13 +94,13 @@
 
     // ! WARNING: this function should not be called directly. Instead, use corresponding macro.
     // * Newline is included as part of function.
-    static inline void mlog_error(const char* msg) {
+    static void mlog_error(const char* msg) {
         fprintf(stderr, "[ERROR]: %s\n", msg);
     }
 
     // ! WARNING: this function should not be called directly. Instead, use corresponding macro.
     // * Newline is included as part of function.
-    static inline void mlog_errorf(const char* msg, ...) {
+    static void mlog_errorf(const char* msg, ...) {
         va_list args;
         va_start(args, msg);
         fprintf(stderr, "[ERROR]: ");
@@ -111,13 +111,13 @@
 
     // ! WARNING: this function should not be called directly. Instead, use corresponding macro.
     // * Newline is included as part of function.
-    static inline void mlog_errorc(const char* color, const char* msg) {
+    static void mlog_errorc(const char* color, const char* msg) {
         fprintf(stderr, "%s[ERROR]: %s%s\n", color, msg, NO_COLOR);
     }
 
     // ! WARNING: this function should not be called directly. Instead, use corresponding macro.
     // * Newline is included as part of function.
-    static inline void mlog_errorfc(const char* color, const char* msg, ...) {
+    static void mlog_errorfc(const char* color, const char* msg, ...) {
         va_list args;
         va_start(args, msg);
         fprintf(stderr, "%s[ERROR]: ", color);
@@ -127,7 +127,7 @@
     }
 
     /* testing */
-    static inline int mlog_test(int cond, const char* tag) {
+    static int mlog_test(int cond, const char* tag) {
         if (cond) {
             printf("[TEST] %s: %s[PASSED]%s\n", tag, TC_GREEN, NO_COLOR);
             return 0;
@@ -137,7 +137,7 @@
         }
     }
 
-    static inline int mlog_testc(const char* color, int cond, const char* tag) {
+    static int mlog_testc(const char* color, int cond, const char* tag) {
         if (cond) {
             printf("%s[TEST] %s: %s[PASSED]%s\n", color, tag, TC_GREEN, NO_COLOR);
             return 0;
