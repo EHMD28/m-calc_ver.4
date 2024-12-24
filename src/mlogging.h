@@ -156,7 +156,7 @@ static int mlog_testc(const char* color, const char* tag, int cond) {
 /* standard */
 #define MLOG_log(msg) mlog_log(msg);
 #define MLOG_error(msg) mlog_error(msg);
-#define MLOG_test(tag, cond) mlog_test(cond, tag);
+#define MLOG_test(tag, cond) mlog_test(tag, cond);
 
 /* arrays */
 #define MLOG_array_int(arr, size) mlog_array_int(arr, size);
@@ -181,7 +181,7 @@ static int mlog_testc(const char* color, const char* tag, int cond) {
 /* color */
 #define MLOG_logc(color, msg) mlog_logc(color, msg);
 #define MLOG_errorc(color, msg) mlog_errorc(color, msg);
-#define MLOG_testc(tag, color, cond) mlog_testc(color, cond, tag);
+#define MLOG_testc(tag, color, cond) mlog_testc(color, tag, cond);
 
 /* color and format */
 #define MLOG_logfc(color, msg, ...) mlog_logfc(color, msg, __VA_ARGS__);
