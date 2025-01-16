@@ -24,8 +24,4 @@ static bool MC4_error_occured(MC4_ErrorCode code) {
 
 double MC4_evaluate(const char* equ, MC4_ErrorCode* err);
 
-/* tests */
-void test_tokenization(void);
-void test_parsing(void);
-
 #endif

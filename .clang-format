@@ -4,3 +4,7 @@ ColumnLimit: 80
 AllowShortEnumsOnASingleLine: false
 AllowShortBlocksOnASingleLine: Empty
 AllowShortCaseExpressionOnASingleLine: true
+AllowShortCaseLabelsOnASingleLine: true
+PointerAlignment: Left
+IndentCaseLabels: true
+IndentCaseBlocks: true

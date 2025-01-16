@@ -1,4 +1,6 @@
-// #include "mlogging.h"
-#include "mcalc4.h"
+#include "tests.h"
 
-int main(void) { test_tokenization(); }
+int main(void) {
+    test_tokenization();
+    test_parsing();
+}
