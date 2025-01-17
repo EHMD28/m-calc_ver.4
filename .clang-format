@@ -6,5 +6,7 @@ AllowShortBlocksOnASingleLine: Empty
 AllowShortCaseExpressionOnASingleLine: true
 AllowShortCaseLabelsOnASingleLine: true
 PointerAlignment: Left
-IndentCaseLabels: true
+IndentCaseLabels: false
 IndentCaseBlocks: true
+AllowShortFunctionsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: true
