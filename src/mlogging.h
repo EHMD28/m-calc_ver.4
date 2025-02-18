@@ -131,7 +131,7 @@ static void __internal__mlog_array_str(char* arr[], size_t size) {
 
 static void __internal__mlog_array_custom(void* arr, size_t len,
                                           size_t type_size,
-                                          char* (*fmt_fn)(void*)) {
+                                          const char* (*fmt_fn)(void*)) {
     printf("[LOG]: [");
     char* ptr_pos = (char*)arr;
     for (size_t i = 0; i < len; i++) {
@@ -173,10 +173,10 @@ static void __internal__mlog_errorfc(const char* color, const char* msg, ...) {
 static int __internal__mlog_test(const char* tag, int cond) {
     if (cond) {
         printf("[TEST] %s: %s[PASSED]%s\n", tag, TC_GREEN, NO_COLOR);
-        return 0;
+        return 1;
     } else {
         printf("[TEST] %s: %s[FAILED]%s\n", tag, TC_RED, NO_COLOR);
-        return 1;
+        return 0;
     }
 }
 
@@ -218,7 +218,7 @@ struct __internal_mlog_libfuncs {
     void (*long_array)(long arr[], size_t len);
     void (*long_long_array)(long long arr[], size_t len);
     void (*array_custom)(void* arr, size_t len, size_t type_size,
-                         char* (*to_str)(void*));
+                         const char* (*to_str)(void*));
     /* error */
     void (*error)(const char* msg);
     void (*errorf)(const char* msg, ...);
