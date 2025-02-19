@@ -33,11 +33,11 @@ $
 
 When an input is given to `mcalc4` with a first word that isn't one of the 
 designated commands, the input will be evaluates as a mathematical expression.
-These expressions can include all of the basic arithmetic operators (`+-*/^`),
-functions such as `sin`, `cos`, `tan`, `arcsin`, `arccos`, and `arctan`, and
-constants such as `pi` and `e`. All of these values are case insinsitive,
-so don't worry about capitalization. **It is important to note that π is not
-recognized by the calculator, alongside all other Unicode characters.**
+These expressions can include all of the basic arithmetic operators
+(`+, -, *, /, ^`), functions such as `sin`, `cos`, `tan`, `arcsin`, `arccos`,
+and `arctan`, and constants such as `pi` and `e`. All of these values are case
+insinsitive, so don't worry about capitalization. **It is important to note that
+π is not recognized by the calculator, alongside all other Unicode characters.**
 
 ## Variables
 The syntax for declaring variables in `mcacl4` is `mcalc4> set {var_name} = 4`.

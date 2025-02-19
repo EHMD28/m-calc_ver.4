@@ -37,6 +37,7 @@
 *.hex
 tests
 mcalc4
+!mcalc4/
 
 # Debug files
 *.dSYM/
