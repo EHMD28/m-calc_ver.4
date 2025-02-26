@@ -94,7 +94,7 @@ static void reader_move_back(struct StringReader* reader) {
     reader->pos--;
 }
 
-const char* tokens_type_to_str(enum TokenType type) {
+const char* token_type_to_str(enum TokenType type) {
     switch (type) {
     case TYPE_EMPTY: return "EMPTY";
     case TYPE_NUMBER: return "NUMBER";
@@ -316,12 +316,18 @@ void fix_tokens(struct TokensList* list) {
     }
 }
 
+/**
+ * Advances reader until there is no more whitespace to read.
+ */
 static void reader_handle_whitespace(struct StringReader* reader) {
     while (isspace(reader_get_current(reader))) {
         reader_advance(reader);
     }
 }
 
+/**
+ * Tokenizes all sequential operator characters such as '+' and '^'.
+ */
 static void reader_handle_op(struct StringReader* reader,
                              struct TokensList* list) {
     char current_ch = reader_get_current(reader);
@@ -333,6 +339,9 @@ static void reader_handle_op(struct StringReader* reader,
     }
 }
 
+/**
+ * When a digit is found, the value wil be read and added to tokens.
+ */
 static void reader_handle_digit(struct StringReader* reader,
                                 struct TokensList* list) {
     if (isdigit(reader_get_current(reader))) {
@@ -342,6 +351,9 @@ static void reader_handle_digit(struct StringReader* reader,
     }
 }
 
+/**
+ * Tokenizes all sequential parenthesis.
+ */
 static void reader_handle_par(struct StringReader* reader,
                               struct TokensList* list) {
     char current_ch = reader_get_current(reader);
@@ -358,6 +370,10 @@ static void reader_handle_par(struct StringReader* reader,
     }
 }
 
+/**
+ * When the reader encounters a function, it will tokenize the function and add
+ * it to `list.tokens`.
+ */
 static bool reader_handle_func(struct StringReader* reader,
                                struct TokensList* list) {
     if (is_func_str(reader)) {
@@ -370,6 +386,10 @@ static bool reader_handle_func(struct StringReader* reader,
     return false;
 }
 
+/**
+ * When the reader encounters a constant, it will tokenize the constant and add
+ * it to `list.tokens`.
+ */
 static bool reader_handle_const(struct StringReader* reader,
                                 struct TokensList* list) {
     if (is_constant_str(reader)) {
@@ -383,6 +403,10 @@ static bool reader_handle_const(struct StringReader* reader,
     return false;
 }
 
+/**
+ * When the reader encounters a single letter which isn't part of a function or
+ * constant.
+ */
 static void reader_handle_var(struct StringReader* reader,
                               struct TokensList* list) {
     if (isalpha(reader_get_current(reader))) {
@@ -395,12 +419,8 @@ static void reader_handle_var(struct StringReader* reader,
 }
 
 /**
- * @brief Takes in string and tokenized it, writing to `list`. An error is
+ * Takes in string and tokenized it, writing to `list`. An error is
  * written to `err`.
- *
- * @param equ
- * @param list
- * @param err
  */
 struct TokensList tokenize(const char* equ, MC4_ErrorCode* err) {
     // TODO: add error handling in tokenize().
@@ -444,7 +464,7 @@ void parser_consume(struct Parser* parser, enum TokenType type) {
         parser->pos++;
     } else {
         MLOG.panicf("Unexpected token: %s. Expected: %s", token_to_str(current),
-                    tokens_type_to_str(type));
+                    token_type_to_str(type));
     }
 }
 
@@ -455,99 +475,92 @@ double parse_addsub(struct Parser* parser, MC4_ErrorCode* err);
 double parse_numpar(struct Parser* parser, MC4_ErrorCode* err);
 
 double parse_func(struct Parser* parser, MC4_ErrorCode* err) {
-    // TODO: Check if correct.
     struct Token* current = parser_get_current(parser);
-    double value = 0.0;
-    while (current->type == TYPE_FUNCTION) {
+    if (current->type == TYPE_FUNCTION) {
         parser_consume(parser, TYPE_FUNCTION);
+        double value = parse_func(parser, err);
         switch (current->func_type) {
-        case FN_SIN: value = sin(parse_numpar(parser, err));
-        case FN_COS: value = cos(parse_numpar(parser, err));
-        case FN_TAN: value = tan(parse_numpar(parser, err));
-        case FN_ASIN: value = asin(parse_numpar(parser, err));
-        case FN_ACOS: value = acos(parse_numpar(parser, err));
-        case FN_ATAN: value = atan(parse_numpar(parser, err));
-        case FN_LOG_10: value = log10(parse_numpar(parser, err));
-        case FN_LOG_E: value = log(parse_numpar(parser, err));
+        case FN_SIN: return sin(value);
+        case FN_COS: return cos(value);
+        case FN_TAN: return tan(value);
+        case FN_ASIN: return asin(value);
+        case FN_ACOS: return acos(value);
+        case FN_ATAN: return atan(value);
+        case FN_LOG_10: return log10(value);
+        case FN_LOG_E: return log(value);
         }
-        current = parser_get_current(parser);
+    } else if ((current->type == TYPE_PAR_LEFT) ||
+               (current->type == TYPE_NUMBER)) {
+        return parse_numpar(parser, err);
     }
-    return value;
+
+    return 0;
 }
 
 double parse_exp(struct Parser* parser, MC4_ErrorCode* err) {
-    double value = parse_numpar(parser, err);
-
+    double value = parse_func(parser, err);
     struct Token* current = parser_get_current(parser);
-    while ((current->type == TYPE_OPERATOR) && (current->op == '^')) {
+    while (current->type == TYPE_OPERATOR && current->op == '^') {
         parser_consume(parser, TYPE_OPERATOR);
         value = pow(value, parse_func(parser, err));
         current = parser_get_current(parser);
     }
-
     return value;
 }
 
 double parse_multdiv(struct Parser* parser, MC4_ErrorCode* err) {
-    double value = parse_numpar(parser, err);
-
+    double value = parse_exp(parser, err);
     struct Token* current = parser_get_current(parser);
-    while ((current->type == TYPE_OPERATOR) &&
-           (current->op == '*' || current->op == '/')) {
-        parser_consume(parser, TYPE_OPERATOR);
+    while (current->type == TYPE_OPERATOR &&
+           ((current->op == '*') || (current->op == '/'))) {
         if (current->op == '*') {
+            parser_consume(parser, TYPE_OPERATOR);
             value *= parse_exp(parser, err);
         } else {
+            parser_consume(parser, TYPE_OPERATOR);
             value /= parse_exp(parser, err);
         }
-
         current = parser_get_current(parser);
     }
-
     return value;
 }
 
 double parse_addsub(struct Parser* parser, MC4_ErrorCode* err) {
-    double value = parse_numpar(parser, err);
-
+    double value = parse_multdiv(parser, err);
     struct Token* current = parser_get_current(parser);
-    while ((current->type == TYPE_OPERATOR) &&
-           (current->op == '+' || current->op == '-')) {
-        parser_consume(parser, TYPE_OPERATOR);
+    while (current->type == TYPE_OPERATOR &&
+           ((current->op == '+') || (current->op == '-'))) {
         if (current->op == '+') {
+            parser_consume(parser, TYPE_OPERATOR);
             value += parse_multdiv(parser, err);
         } else {
+            parser_consume(parser, TYPE_OPERATOR);
             value -= parse_multdiv(parser, err);
         }
         current = parser_get_current(parser);
     }
-
     return value;
 }
 
 double parse_numpar(struct Parser* parser, MC4_ErrorCode* err) {
     struct Token* current = parser_get_current(parser);
-    double value = 0;
-
     if (current->type == TYPE_NUMBER) {
-        value = current->value;
         parser_consume(parser, TYPE_NUMBER);
+        return current->value;
     } else if (current->type == TYPE_PAR_LEFT) {
         parser_consume(parser, TYPE_PAR_LEFT);
-        value = parse_addsub(parser, err);
+        double value = parse_addsub(parser, err);
         parser_consume(parser, TYPE_PAR_RIGHT);
+        return value;
+    } else {
+        MLOG.panic("Expected number or parenthesis");
+        return 0;
     }
-
-    return value;
 }
 
 /**
- * @brief Takes in a list of tokens, and parses the results, returning
- * the result of the expression as a double.
- *
- * @param tokens
- * @param err
- * @return double
+ * Takes in a list of tokens, and parses the results, returning the result of
+ * the expression as a double.
  */
 double parse_tokens(struct TokensList* list, MC4_ErrorCode* err) {
     (void)err;
@@ -557,6 +570,14 @@ double parse_tokens(struct TokensList* list, MC4_ErrorCode* err) {
     return result;
 }
 
+/**
+ * @brief Evaluates a mathematical expression, returning the result as a double.
+ *
+ * @param equ equation in the form of a string.
+ * @param err if an error occured when evaluating the equation, then it will be
+ * writtent to err.
+ * @return result
+ */
 double MC4_evaluate(const char* equ, MC4_ErrorCode* err) {
     MC4_ErrorCode error_code = MC4_NO_ERROR;
 
@@ -606,8 +627,6 @@ bool tokens_arr_equal(struct Token a[], struct Token b[], const int len) {
 
     return true;
 }
-
-/* Used for debugging purposes only. */
 
 static void test_tokenization_one(void) {
     struct Token test[] = {(struct Token){.type = TYPE_NUMBER, .value = 2},
@@ -718,19 +737,19 @@ void test_tokenization(void) {
     test_tokenization_five();
 }
 
+static void run_parse_test(const char* equ, double expected) {
+    double test = MC4_evaluate(equ, NULL);
+    int passed = MLOG.test(equ, doubles_mostly_equal(test, expected));
+    if (!passed) {
+        MLOG.logf("Expected value: %lf | Found value: %lf", expected, test);
+    }
+}
+
 void test_parsing(void) {
     MLOG.log("Parsing Test Suite");
 
-    double test_one = MC4_evaluate("2+4", NULL);
-    MLOG.test("2+4", doubles_mostly_equal(test_one, 6));
-
-    double test_two = MC4_evaluate("(2*4/6)^8", NULL);
-    MLOG.test("(2*4/6)^8", doubles_mostly_equal(test_two, 9.98872123151958));
-
-    double test_three = MC4_evaluate("cos(arctan(sin(pi/2)))", NULL);
-    MLOG.test("cos(arctan(sin(pi/2)))",
-              doubles_mostly_equal(test_three, 0.7071067811865476));
-
-    double test_four = MC4_evaluate("ln(e^2) + log(10)", NULL);
-    MLOG.test("ln(e^2) + log(10)", doubles_mostly_equal(test_four, 3));
+    run_parse_test("2+4", 6);
+    run_parse_test("(2*4/6)^8", 9.98872123151958);
+    run_parse_test("cos(arctan(sin(pi/2)))", 0.7071067811865476);
+    run_parse_test("ln(e^2) + log(10)", 3);
 }
