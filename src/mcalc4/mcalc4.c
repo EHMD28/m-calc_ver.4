@@ -22,7 +22,7 @@ enum TokenType {
     TYPE_VARIABLE,
 };
 
-enum ConstantType {
+enum ConstType {
     CONST_PI,
     CONST_E,
 };
@@ -48,8 +48,6 @@ struct Token {
         char op;
         /* Used for storing the value of a `NUMBER`. */
         double value;
-        /* Used for storing the type of a `CONSTANT`.  */
-        enum ConstantType const_type;
         /* Used for storing the type of a `FUNCTION`. */
         enum FuncType func_type;
         /* Used for storing the identifier of a `VARIABLE`. */
@@ -101,17 +99,9 @@ const char* token_type_to_str(enum TokenType type) {
     case TYPE_OPERATOR: return "OPERATOR";
     case TYPE_PAR_LEFT: return "PAR_LEFT";
     case TYPE_PAR_RIGHT: return "PAR_RIGHT";
-    case TYPE_CONSTANT: return "CONSTANT";
     case TYPE_FUNCTION: return "FUNCTION";
     case TYPE_VARIABLE: return "VARIABLE";
     default: return NULL;
-    }
-}
-
-const char* consttype_to_str(enum ConstantType type) {
-    switch (type) {
-    case CONST_PI: return "PI";
-    case CONST_E: return "E";
     }
 }
 
@@ -138,18 +128,15 @@ const char* token_to_str(void* ptr) {
     case TYPE_OPERATOR: type = "OPERATOR"; break;
     case TYPE_PAR_LEFT: type = "PAR_LEFT"; break;
     case TYPE_PAR_RIGHT: type = "PAR_RIGHT"; break;
-    case TYPE_CONSTANT: type = "CONSTANT"; break;
     case TYPE_FUNCTION: type = "FUNCTION"; break;
     case TYPE_VARIABLE: type = "VARIABLE"; break;
+    case TYPE_CONSTANT: type = "CONSTANT"; break;
     }
 
     if (token->type == TYPE_NUMBER) {
         snprintf(buffer, 100, "%s(%lf)", type, token->value);
     } else if (token->type == TYPE_OPERATOR) {
         snprintf(buffer, 100, "%s(%c)", type, token->op);
-    } else if (token->type == TYPE_CONSTANT) {
-        snprintf(buffer, 100, "%s(%s)", type,
-                 consttype_to_str(token->const_type));
     } else if (token->type == TYPE_FUNCTION) {
         snprintf(buffer, 100, "%s(%s)", type,
                  functype_to_str(token->func_type));
@@ -186,7 +173,6 @@ struct TokensList new_list() {
 
 void add_token(struct TokensList* list, struct Token token,
                MC4_ErrorCode* err) {
-
     if (list->tkns_pos >= MAX_TOKENS) {
         *err = MC4_TOO_MANY_TOKENS;
         MLOG.error("Too many tokens.");
@@ -259,60 +245,25 @@ enum FuncType funcstr_to_type(struct StringReader* reader) {
     return -1;
 }
 
-bool is_constant_str(struct StringReader* reader) {
+const char* find_const_str(struct StringReader* reader) {
     const char* const CONSTANTS[] = {"pi", "e"};
     const int SIZE = sizeof(CONSTANTS) / sizeof(CONSTANTS[0]);
 
     for (int i = 0; i < SIZE; i++) {
         if (string_at(CONSTANTS[i], reader->str, reader->pos)) {
-            return true;
+            return CONSTANTS[i];
         }
     }
-
-    return false;
+    return NULL;
 }
 
-enum ConstantType conststr_to_type(struct StringReader* reader) {
-    const char* CONSTANT_STRS[] = {"pi", "e"};
-
-    const enum ConstantType CONSTANT_TYPES[] = {CONST_PI, CONST_E};
-
-    const int FN_STRS_SIZE = sizeof(CONSTANT_STRS) / sizeof(CONSTANT_STRS[0]);
-    const int FN_TYPES_SIZE =
-        sizeof(CONSTANT_TYPES) / sizeof(CONSTANT_TYPES[0]);
-
-    assert(FN_STRS_SIZE == FN_TYPES_SIZE);
-
-    for (int i = 0; i < FN_STRS_SIZE; i++) {
-        if (string_at(CONSTANT_STRS[i], reader->str, reader->pos)) {
-            reader->pos += strlen(CONSTANT_STRS[i]);
-            return CONSTANT_TYPES[i];
-        }
-    }
-
-    return -1;
-}
-
-double const_to_value(enum ConstantType type) {
-    switch (type) {
-    case CONST_PI: return M_PI;
-    case CONST_E: return M_E;
-    }
-}
-
-/**
- * @brief Changes tokens into parseable format (i.e. converting from constants
- * to doubles and handling negative signs).
- *
- * @param list
- */
-void fix_tokens(struct TokensList* list) {
-    for (unsigned int i = 0; i < list->tkns_pos; i++) {
-        if (list->tokens[i].type == TYPE_CONSTANT) {
-            double value = const_to_value(list->tokens[i].const_type);
-            list->tokens[i].type = TYPE_NUMBER;
-            list->tokens[i].value = value;
-        }
+double const_str_to_value(const char* s) {
+    if (strcmp(s, "pi") == 0) {
+        return M_PI;
+    } else if (strcmp(s, "e") == 0) {
+        return M_E;
+    } else {
+        return 0;
     }
 }
 
@@ -329,11 +280,11 @@ static void reader_handle_whitespace(struct StringReader* reader) {
  * Tokenizes all sequential operator characters such as '+' and '^'.
  */
 static void reader_handle_op(struct StringReader* reader,
-                             struct TokensList* list) {
+                             struct TokensList* list, MC4_ErrorCode* err) {
     char current_ch = reader_get_current(reader);
     while (strchr("+-*/^", current_ch) != NULL) {
         add_token(list, (struct Token){.type = TYPE_OPERATOR, .op = current_ch},
-                  NULL);
+                  err);
         reader_advance(reader);
         current_ch = reader_get_current(reader);
     }
@@ -343,11 +294,11 @@ static void reader_handle_op(struct StringReader* reader,
  * When a digit is found, the value wil be read and added to tokens.
  */
 static void reader_handle_digit(struct StringReader* reader,
-                                struct TokensList* list) {
+                                struct TokensList* list, MC4_ErrorCode* err) {
     if (isdigit(reader_get_current(reader))) {
         double value = read_num(reader);
         add_token(list, (struct Token){.type = TYPE_NUMBER, .value = value},
-                  NULL);
+                  err);
     }
 }
 
@@ -355,14 +306,13 @@ static void reader_handle_digit(struct StringReader* reader,
  * Tokenizes all sequential parenthesis.
  */
 static void reader_handle_par(struct StringReader* reader,
-                              struct TokensList* list) {
+                              struct TokensList* list, MC4_ErrorCode* err) {
     char current_ch = reader_get_current(reader);
-
     while (current_ch == '(' || current_ch == ')') {
         if (current_ch == '(') {
-            add_token(list, (struct Token){.type = TYPE_PAR_LEFT}, NULL);
+            add_token(list, (struct Token){.type = TYPE_PAR_LEFT}, err);
         } else {
-            add_token(list, (struct Token){.type = TYPE_PAR_RIGHT}, NULL);
+            add_token(list, (struct Token){.type = TYPE_PAR_RIGHT}, err);
         }
 
         reader_advance(reader);
@@ -375,12 +325,12 @@ static void reader_handle_par(struct StringReader* reader,
  * it to `list.tokens`.
  */
 static bool reader_handle_func(struct StringReader* reader,
-                               struct TokensList* list) {
+                               struct TokensList* list, MC4_ErrorCode* err) {
     if (is_func_str(reader)) {
         enum FuncType func_type = funcstr_to_type(reader);
         add_token(list,
                   (struct Token){.type = TYPE_FUNCTION, .func_type = func_type},
-                  NULL);
+                  err);
         return true;
     }
     return false;
@@ -391,13 +341,13 @@ static bool reader_handle_func(struct StringReader* reader,
  * it to `list.tokens`.
  */
 static bool reader_handle_const(struct StringReader* reader,
-                                struct TokensList* list) {
-    if (is_constant_str(reader)) {
-        enum ConstantType const_type = conststr_to_type(reader);
-        add_token(
-            list,
-            (struct Token){.type = TYPE_CONSTANT, .const_type = const_type},
-            NULL);
+                                struct TokensList* list, MC4_ErrorCode* err) {
+    const char* const_str = find_const_str(reader);
+    if (const_str != NULL) {
+        double value = const_str_to_value(const_str);
+        add_token(list, (struct Token){.type = TYPE_NUMBER, .value = value},
+                  err);
+        reader->pos += strlen(const_str);
         return true;
     }
     return false;
@@ -408,12 +358,12 @@ static bool reader_handle_const(struct StringReader* reader,
  * constant.
  */
 static void reader_handle_var(struct StringReader* reader,
-                              struct TokensList* list) {
+                              struct TokensList* list, MC4_ErrorCode* err) {
     if (isalpha(reader_get_current(reader))) {
         add_token(list,
                   (struct Token){.type = TYPE_VARIABLE,
                                  .var_symbol = reader_get_current(reader)},
-                  NULL);
+                  err);
         reader_advance(reader);
     }
 }
@@ -424,21 +374,20 @@ static void reader_handle_var(struct StringReader* reader,
  */
 struct TokensList tokenize(const char* equ, MC4_ErrorCode* err) {
     // TODO: add error handling in tokenize().
-    (void)err;
     struct TokensList tokens_list = new_list();
     const unsigned int EQU_LEN = strlen(equ);
     struct StringReader reader = new_string_reader(equ);
 
     while (reader.pos < EQU_LEN) {
         reader_handle_whitespace(&reader);
-        reader_handle_op(&reader, &tokens_list);
-        reader_handle_digit(&reader, &tokens_list);
-        reader_handle_par(&reader, &tokens_list);
-        if (reader_handle_func(&reader, &tokens_list)) continue;
-        if (reader_handle_const(&reader, &tokens_list)) continue;
+        reader_handle_op(&reader, &tokens_list, err);
+        reader_handle_digit(&reader, &tokens_list, err);
+        reader_handle_par(&reader, &tokens_list, err);
+        if (reader_handle_func(&reader, &tokens_list, err)) continue;
+        if (reader_handle_const(&reader, &tokens_list, err)) continue;
         /* It is necessary to continue loop to avoid reading functions or
         constants as variables. */
-        reader_handle_var(&reader, &tokens_list);
+        reader_handle_var(&reader, &tokens_list, err);
     }
 
     return tokens_list;
@@ -570,6 +519,14 @@ double parse_tokens(struct TokensList* list, MC4_ErrorCode* err) {
     return result;
 }
 
+static struct MC4_Result new_result() {
+    return (struct MC4_Result){
+        .value = 0,
+        .err = MC4_NO_ERROR,
+        .vars = {0},
+    };
+}
+
 /**
  * @brief Evaluates a mathematical expression, returning the result as a double.
  *
@@ -578,15 +535,19 @@ double parse_tokens(struct TokensList* list, MC4_ErrorCode* err) {
  * writtent to err.
  * @return result
  */
-double MC4_evaluate(const char* equ, MC4_ErrorCode* err) {
+struct MC4_Result MC4_evaluate(const char* equ) {
+    /* variables */
     MC4_ErrorCode error_code = MC4_NO_ERROR;
-
+    struct MC4_Result result = new_result();
+    MC4_ErrorCode* err = &result.err;
+    /* tokenization */
     struct TokensList tokens_list = tokenize(equ, &error_code);
     if (err != NULL) *err = error_code;
-    fix_tokens(&tokens_list);
-
-    double result = parse_tokens(&tokens_list, &error_code);
+    // fix_tokens(&tokens_list);
+    /* parsing */
+    double value = parse_tokens(&tokens_list, &error_code);
     if (err != NULL) *err = error_code;
+    result.value = value;
 
     return result;
 }
@@ -608,8 +569,6 @@ bool tokens_equal(struct Token a, struct Token b) {
     case TYPE_OPERATOR: return (b.type == TYPE_OPERATOR) && (a.op == b.op);
     case TYPE_PAR_LEFT: return b.type == TYPE_PAR_LEFT;
     case TYPE_PAR_RIGHT: return b.type == TYPE_PAR_RIGHT;
-    case TYPE_CONSTANT:
-        return (b.type == TYPE_CONSTANT) && (a.const_type == b.const_type);
     case TYPE_FUNCTION:
         return (b.type == TYPE_FUNCTION) && (a.func_type == b.func_type);
     case TYPE_VARIABLE:
@@ -687,7 +646,7 @@ static void test_tokenization_four(void) {
         (struct Token){.type = TYPE_PAR_LEFT},
         (struct Token){.type = TYPE_FUNCTION, .func_type = FN_SIN},
         (struct Token){.type = TYPE_PAR_LEFT},
-        (struct Token){.type = TYPE_CONSTANT, .const_type = CONST_PI},
+        (struct Token){.type = TYPE_NUMBER, .value = M_PI},
         (struct Token){.type = TYPE_OPERATOR, .op = '/'},
         (struct Token){.type = TYPE_NUMBER, .value = 2},
         (struct Token){.type = TYPE_PAR_RIGHT},
@@ -708,7 +667,7 @@ static void test_tokenization_five(void) {
     struct Token test[] = {
         (struct Token){.type = TYPE_FUNCTION, .func_type = FN_LOG_E},
         (struct Token){.type = TYPE_PAR_LEFT},
-        (struct Token){.type = TYPE_CONSTANT, .const_type = CONST_E},
+        (struct Token){.type = TYPE_NUMBER, .value = M_E},
         (struct Token){.type = TYPE_OPERATOR, .op = '^'},
         (struct Token){.type = TYPE_NUMBER, .value = 2},
         (struct Token){.type = TYPE_PAR_RIGHT},
@@ -738,8 +697,8 @@ void test_tokenization(void) {
 }
 
 static void run_parse_test(const char* equ, double expected) {
-    double test = MC4_evaluate(equ, NULL);
-    int passed = MLOG.test(equ, doubles_mostly_equal(test, expected));
+    struct MC4_Result test = MC4_evaluate(equ);
+    int passed = MLOG.test(equ, doubles_mostly_equal(test.value, expected));
     if (!passed) {
         MLOG.logf("Expected value: %lf | Found value: %lf", expected, test);
     }
@@ -747,7 +706,6 @@ static void run_parse_test(const char* equ, double expected) {
 
 void test_parsing(void) {
     MLOG.log("Parsing Test Suite");
-
     run_parse_test("2+4", 6);
     run_parse_test("(2*4/6)^8", 9.98872123151958);
     run_parse_test("cos(arctan(sin(pi/2)))", 0.7071067811865476);
