@@ -1,6 +1,14 @@
 #ifndef MCALCULATOR_VERSION_4_H_
 #define MCALCULATOR_VERSION_4_H_
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
+#ifndef M_E
+#define M_E 2.71828182845904523536
+#endif
+
 #include <stdbool.h>
 #include <stddef.h>
 

@@ -1,8 +1,9 @@
-WFLAGS=-Wall -Wextra -pedantic -std=c11 -fsanitize=address -Wno-unused-function -Werror
+WFLAGS=-lm -Wall -Wextra -pedantic -std=c11 -fsanitize=address -Wno-unused-function -Werror
 CLI_DIR=src/cli
 LIBS_DIR=src/libs
 MCALC4_DIR=src/mcalc4
 CLI_DIR=src/cli
+# CC=gcc
 
 .PHONY: tests clean release
 

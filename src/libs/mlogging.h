@@ -5,14 +5,14 @@
 /* Terminal Colors */
 // typedef const char* const char*;
 static const char* NO_COLOR = "\033[0m";
-static const char* TC_BLACK = "\033[0;30m";
+// static const char* TC_BLACK = "\033[0;30m";
 static const char* TC_RED = "\033[0;31m";
 static const char* TC_GREEN = "\033[0;32m";
-static const char* TC_YELLOW = "\033[0;33m";
-static const char* TC_BLUE = "\033[0;34m";
-static const char* TC_PURPLE = "\033[0;35m";
-static const char* TC_CYAN = "\033[0;36m";
-static const char* TC_WHITE = "\033[0;37m";
+// static const char* TC_YELLOW = "\033[0;33m";
+// static const char* TC_BLUE = "\033[0;34m";
+// static const char* TC_PURPLE = "\033[0;35m";
+// static const char* TC_CYAN = "\033[0;36m";
+// static const char* TC_WHITE = "\033[0;37m";
 
 struct __internal__mlog_term_colors {
     const char* Reset;
@@ -26,7 +26,7 @@ struct __internal__mlog_term_colors {
     const char* White;
 };
 
-static struct __internal__mlog_term_colors MLOG_Color = {
+struct __internal__mlog_term_colors MLOG_Color = {
     .Reset = "\033[0m",
     .Black = "\033[0;30m",
     .Red = "\033[0;31m",

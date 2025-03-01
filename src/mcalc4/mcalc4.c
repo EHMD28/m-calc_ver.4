@@ -117,6 +117,7 @@ const char* functype_to_str(enum FuncType type) {
     case FN_LOG_10: return "LOG_10";
     case FN_LOG_E: return "LOG_E";
     }
+    return NULL;
 }
 
 const char* token_to_str(void* ptr) {
@@ -267,9 +268,9 @@ double const_str_to_value(const char* s) {
         return M_PI;
     } else if (strcmp(s, "e") == 0) {
         return M_E;
-    } else {
-        return 0;
     }
+
+    return 0;
 }
 
 /**
@@ -496,8 +497,8 @@ double parse_func(struct Parser* parser, MC4_ErrorCode* err) {
         return parse_numpar(parser, err);
     } else {
         MLOG.error("In parse_func()");
-        return 0;
     }
+    return 0;
 }
 
 double parse_exp(struct Parser* parser, MC4_ErrorCode* err) {
