@@ -35,10 +35,11 @@
 *.i*86
 *.x86_64
 *.hex
-tests
+app-tests
 !tests/
 mcalc4
 !mcalc4/
+
 
 # Debug files
 *.dSYM/

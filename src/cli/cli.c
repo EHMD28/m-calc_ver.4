@@ -1,25 +1,10 @@
 #include "cli.h"
-#include "../libs/arachne-strlib/arachne_strlib.h"
-#include "../libs/mlogging.h"
+#include "../../libs/arachne-strlib/arachne_strlib.h"
+#include "../../libs/mlogging.h"
 #include "../mcalc4/mcalc4.h"
-#include <ctype.h>
+// #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
-
-enum AngleMode {
-    DEG,
-    RAD,
-};
-
-struct MC4_Settings {
-    enum AngleMode angle_mode;
-};
-
-static struct MC4_Settings settings_default() {
-    return (struct MC4_Settings){
-        .angle_mode = RAD,
-    };
-}
 
 void evaluate_all(const char* equations[], int num_equs) {
     struct MC4_Result result;
@@ -34,6 +19,21 @@ void evaluate_all(const char* equations[], int num_equs) {
             printf("%s = %lf\n", equations[i], result.value);
         }
     }
+}
+
+enum AngleMode {
+    DEG,
+    RAD,
+};
+
+struct MC4_Settings {
+    enum AngleMode angle_mode;
+};
+
+static struct MC4_Settings settings_default() {
+    return (struct MC4_Settings){
+        .angle_mode = RAD,
+    };
 }
 
 static const char* const HELP_STR =
@@ -84,6 +84,7 @@ static void handle_let_command(ArachneString* astr,
                                struct MC4_VariableSet* varset) {
     (void)astr;
     (void)varset;
+    ;
 }
 
 static void handle_set_command(ArachneString* astr,
@@ -128,15 +129,5 @@ void start_cli() {
             handle_command(command, &astr, &vars, &settings);
             // MLOG.panicf("TODO in %s", __FILE__);
         }
-        // trim_str_end(buffer);
-        // MLOG.logf("Buffer: '%s'", buffer);
-        // command_reader_set_src(&reader, buffer);
-        // current_word = cmd_reader_read_word(&reader);
-        // command = str_to_command(current_word);
-        // if (command == CMD_QUIT) {
-        //     break;
-        // } else {
-        //     handle_command(command, &reader);
-        // }
     }
 }

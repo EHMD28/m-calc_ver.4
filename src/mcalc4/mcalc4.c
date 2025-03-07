@@ -1,6 +1,7 @@
 #include "mcalc4.h"
-#include "../../tests/tests.h"
-#include "../libs/mlogging.h"
+#include "../../libs/mlogging.h"
+// #include "../../tests/tests.h"
+#include "mcalc4_types.h"
 #include <assert.h>
 #include <ctype.h>
 #include <float.h>
@@ -9,59 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_TOKENS 100 // Current 100 for testing purposes, increase in future.
 #define ARR_SIZE(arr) ((sizeof(arr)) / (sizeof(arr[0])))
-
-enum TokenType {
-    TYPE_EMPTY,
-    TYPE_NUMBER,
-    TYPE_OPERATOR,
-    TYPE_PAR_LEFT,
-    TYPE_PAR_RIGHT,
-    TYPE_CONSTANT,
-    TYPE_FUNCTION,
-    TYPE_VARIABLE,
-};
-
-enum ConstType {
-    CONST_PI,
-    CONST_E,
-};
-
-enum FuncType {
-    FN_SIN,
-    FN_COS,
-    FN_TAN,
-    FN_ASIN,
-    FN_ACOS,
-    FN_ATAN,
-    FN_LOG_10,
-    FN_LOG_E,
-};
-
-struct Token {
-    /* Stores the type of token. Metadata for token is stored in attached
-    union. */
-    enum TokenType type;
-
-    union {
-        /* Used for storing type of operator for `OPERATOR`. */
-        char op;
-        /* Used for storing the value of a `NUMBER`. */
-        double value;
-        /* Used for storing the type of a `FUNCTION`. */
-        enum FuncType func_type;
-        /* Used for storing the identifier of a `VARIABLE`. */
-        char symbol;
-    };
-};
-
-struct TokensList {
-    /* List of tokens, capacity is is `MAX_TOKENS` */
-    struct Token tokens[MAX_TOKENS];
-    /* Current index of tokens array */
-    unsigned int tkns_pos;
-};
 
 struct StringReader {
     const char* str;
@@ -93,73 +42,11 @@ static void reader_move_back(struct StringReader* reader) {
     reader->pos--;
 }
 
-const char* token_type_to_str(enum TokenType type) {
-    switch (type) {
-    case TYPE_EMPTY: return "EMPTY";
-    case TYPE_NUMBER: return "NUMBER";
-    case TYPE_OPERATOR: return "OPERATOR";
-    case TYPE_PAR_LEFT: return "PAR_LEFT";
-    case TYPE_PAR_RIGHT: return "PAR_RIGHT";
-    case TYPE_FUNCTION: return "FUNCTION";
-    case TYPE_VARIABLE: return "VARIABLE";
-    default: return NULL;
-    }
-}
-
-const char* functype_to_str(enum FuncType type) {
-    switch (type) {
-    case FN_SIN: return "SIN";
-    case FN_COS: return "COS";
-    case FN_TAN: return "TAN";
-    case FN_ASIN: return "ASIN";
-    case FN_ACOS: return "ACOS";
-    case FN_ATAN: return "ATAN";
-    case FN_LOG_10: return "LOG_10";
-    case FN_LOG_E: return "LOG_E";
-    }
-    return NULL;
-}
-
-const char* token_to_str(void* ptr) {
-    struct Token* token = ptr;
-    static char buffer[100] = {0};
-    const char* type = NULL;
-    switch (token->type) {
-    case TYPE_EMPTY: type = "EMPTY"; break;
-    case TYPE_NUMBER: type = "NUMBER"; break;
-    case TYPE_OPERATOR: type = "OPERATOR"; break;
-    case TYPE_PAR_LEFT: type = "PAR_LEFT"; break;
-    case TYPE_PAR_RIGHT: type = "PAR_RIGHT"; break;
-    case TYPE_FUNCTION: type = "FUNCTION"; break;
-    case TYPE_VARIABLE: type = "VARIABLE"; break;
-    case TYPE_CONSTANT: type = "CONSTANT"; break;
-    }
-
-    if (token->type == TYPE_NUMBER) {
-        snprintf(buffer, 100, "%s(%lf)", type, token->value);
-    } else if (token->type == TYPE_OPERATOR) {
-        snprintf(buffer, 100, "%s(%c)", type, token->op);
-    } else if (token->type == TYPE_FUNCTION) {
-        snprintf(buffer, 100, "%s(%s)", type,
-                 functype_to_str(token->func_type));
-    } else if (token->type == TYPE_VARIABLE) {
-        snprintf(buffer, 100, "%s(%c)", type, token->symbol);
-    } else {
-        snprintf(buffer, 100, "%s", type);
-    }
-
-    return buffer;
-}
-
 /**
  * @brief Checks if `s1` is in `s2` at index `i`
  */
 bool string_at(const char* s1, const char* s2, int i) {
     return (strstr(&s2[i], s1) == &s2[i]);
-}
-
-bool doubles_mostly_equal(double a, double b) {
-    return fabs(a - b) < DBL_EPSILON;
 }
 
 /**
@@ -386,7 +273,7 @@ struct TokensList tokenize(const char* equ, MC4_ErrorCode* err) {
     const unsigned int EQU_LEN = strlen(equ);
     struct StringReader reader = new_string_reader(equ);
 
-    while (reader.pos <= EQU_LEN) {
+    while (reader.pos < EQU_LEN) {
         reader_handle_whitespace(&reader);
         reader_handle_op(&reader, &tokens_list, err);
         reader_handle_digit(&reader, &tokens_list, err);
@@ -406,33 +293,33 @@ static struct MC4_VariableSet new_var_set() {
                                     .values_hashmap = {0}};
 }
 
-static int letter_to_key(char ch) {
-    if (isupper(ch))
-        return ch - 'A';
-    else if (islower(ch)) {
-        return (ch - 'a') + MC4_VARSET_HALF_SIZE;
-    } else {
-        MLOG.errorf("letter_to_key() - invalid letter: %c", ch);
-        return 0;
-    }
-}
+// static int letter_to_key(char ch) {
+//     if (isupper(ch))
+//         return ch - 'A';
+//     else if (islower(ch)) {
+//         return (ch - 'a') + MC4_VARSET_HALF_SIZE;
+//     } else {
+//         MLOG.errorf("letter_to_key() - invalid letter: %c", ch);
+//         return 0;
+//     }
+// }
 
-static char key_to_letter(int key) {
-    if ((key >= 0) && (key < MC4_VARSET_HALF_SIZE)) {
-        return key + 'A';
-    } else if ((key >= MC4_VARSET_HALF_SIZE) && (key < MC4_VARSET_SIZE)) {
-        return key - MC4_VARSET_HALF_SIZE + 'a';
-    } else {
-        MLOG.errorf("key_to_letter() - invalid key: %d", key);
-        return 0;
-    }
-}
+// static char key_to_letter(int key) {
+//     if ((key >= 0) && (key < MC4_VARSET_HALF_SIZE)) {
+//         return key + 'A';
+//     } else if ((key >= MC4_VARSET_HALF_SIZE) && (key < MC4_VARSET_SIZE)) {
+//         return key - MC4_VARSET_HALF_SIZE + 'a';
+//     } else {
+//         MLOG.errorf("key_to_letter() - invalid key: %d", key);
+//         return 0;
+//     }
+// }
 
-extern void set_var(struct MC4_VariableSet* vars, char var, double value) {
-    int key = letter_to_key(var);
-    vars->exists_hashmap[key] = true;
-    vars->values_hashmap[key] = value;
-}
+// extern void set_var(struct MC4_VariableSet* vars, char var, double value) {
+//     int key = letter_to_key(var);
+//     vars->exists_hashmap[key] = true;
+//     vars->values_hashmap[key] = value;
+// }
 
 static void load_vars(struct MC4_Result* result, struct MC4_VariableSet* vars) {
     for (int i = 0; i < MC4_VARSET_SIZE; i++) {
@@ -467,8 +354,9 @@ void parser_consume(struct Parser* parser, enum TokenType type) {
     if (current->type == type) {
         parser->pos++;
     } else {
-        MLOG.panicf("Unexpected token: %s. Expected: %s", token_to_str(current),
-                    token_type_to_str(type));
+        // MLOG.panicf("Unexpected token: %s. Expected: %s",
+        // token_to_str(current),
+        //             token_type_to_str(type));
     }
 }
 
@@ -604,192 +492,4 @@ struct MC4_Result MC4_evaluate(const char* equ, struct MC4_VariableSet* vars) {
     struct TokensList tokens_list = tokenize(equ, err);
     result.value = parse_tokens(&tokens_list, &result.vars, err);
     return result;
-}
-
-/* Code below is for testing. */
-
-bool tokens_equal(struct Token a, struct Token b) {
-    switch (a.type) {
-    case TYPE_EMPTY: return b.type == TYPE_EMPTY;
-    case TYPE_NUMBER:
-        return (b.type == TYPE_NUMBER) &&
-               (doubles_mostly_equal(a.value, b.value));
-    case TYPE_OPERATOR: return (b.type == TYPE_OPERATOR) && (a.op == b.op);
-    case TYPE_PAR_LEFT: return b.type == TYPE_PAR_LEFT;
-    case TYPE_PAR_RIGHT: return b.type == TYPE_PAR_RIGHT;
-    case TYPE_FUNCTION:
-        return (b.type == TYPE_FUNCTION) && (a.func_type == b.func_type);
-    case TYPE_VARIABLE:
-        return (b.type == TYPE_VARIABLE) && (a.symbol == b.symbol);
-    default: return false;
-    }
-}
-
-bool tokens_arr_equal(struct Token a[], struct Token b[], const int len) {
-    for (int i = 0; i < len; i++) {
-        if (!tokens_equal(a[i], b[i])) {
-            return false;
-        }
-    }
-
-    return true;
-}
-
-static void test_tokenization_one(void) {
-    struct Token test[] = {(struct Token){.type = TYPE_NUMBER, .value = 2},
-                           (struct Token){.type = TYPE_OPERATOR, .op = '+'},
-                           (struct Token){.type = TYPE_NUMBER, .value = 4}};
-    struct TokensList result = tokenize("2+4", NULL);
-    int passed = MLOG.test(
-        "2 + 4", tokens_arr_equal(result.tokens, test, ARR_SIZE(test)));
-    if (!passed) {
-        MLOG.array_custom(&result, result.tkns_pos, sizeof(struct Token),
-                          &token_to_str);
-    }
-}
-
-static void test_tokenization_two(void) {
-    struct Token test[] = {(struct Token){.type = TYPE_PAR_LEFT},
-                           (struct Token){.type = TYPE_NUMBER, .value = 2},
-                           (struct Token){.type = TYPE_OPERATOR, .op = '+'},
-                           (struct Token){.type = TYPE_NUMBER, .value = 4},
-                           (struct Token){.type = TYPE_PAR_RIGHT},
-                           (struct Token){.type = TYPE_OPERATOR, .op = '*'},
-                           (struct Token){.type = TYPE_NUMBER, .value = 6}};
-    struct TokensList result = tokenize("(2+4)*6", NULL);
-    int passed = MLOG.test(
-        "(2+4)*6", tokens_arr_equal(result.tokens, test, ARR_SIZE(test)));
-    if (!passed) {
-        MLOG.array_custom(&result, result.tkns_pos, sizeof(struct Token),
-                          &token_to_str);
-    }
-}
-
-static void test_tokenization_three(void) {
-    struct Token test[] = {
-        (struct Token){.type = TYPE_PAR_LEFT},
-        (struct Token){.type = TYPE_NUMBER, .value = 2},
-        (struct Token){.type = TYPE_OPERATOR, .op = '*'},
-        (struct Token){.type = TYPE_NUMBER, .value = 4},
-        (struct Token){.type = TYPE_OPERATOR, .op = '/'},
-        (struct Token){.type = TYPE_NUMBER, .value = 6},
-        (struct Token){.type = TYPE_PAR_RIGHT},
-        (struct Token){.type = TYPE_OPERATOR, .op = '^'},
-        (struct Token){.type = TYPE_NUMBER, .value = 8},
-    };
-    struct TokensList result = tokenize("(2*4/6)^8", NULL);
-    int passed = MLOG.test(
-        "(2*4/6)^8", tokens_arr_equal(result.tokens, test, ARR_SIZE(test)));
-    if (!passed) {
-        MLOG.array_custom(&result, result.tkns_pos, sizeof(struct Token),
-                          &token_to_str);
-    }
-}
-
-static void test_tokenization_four(void) {
-    struct Token test[] = {
-        (struct Token){.type = TYPE_FUNCTION, .func_type = FN_COS},
-        (struct Token){.type = TYPE_PAR_LEFT},
-        (struct Token){.type = TYPE_FUNCTION, .func_type = FN_ATAN},
-        (struct Token){.type = TYPE_PAR_LEFT},
-        (struct Token){.type = TYPE_FUNCTION, .func_type = FN_SIN},
-        (struct Token){.type = TYPE_PAR_LEFT},
-        (struct Token){.type = TYPE_NUMBER, .value = M_PI},
-        (struct Token){.type = TYPE_OPERATOR, .op = '/'},
-        (struct Token){.type = TYPE_NUMBER, .value = 2},
-        (struct Token){.type = TYPE_PAR_RIGHT},
-        (struct Token){.type = TYPE_PAR_RIGHT},
-        (struct Token){.type = TYPE_PAR_RIGHT},
-    };
-    struct TokensList result = tokenize("cos(arctan(sin(pi/2)))", NULL);
-    int passed =
-        MLOG.test("cos(arctan(sin(pi/2)))",
-                  tokens_arr_equal(result.tokens, test, ARR_SIZE(test)));
-    if (!passed) {
-        MLOG.array_custom(&result, result.tkns_pos, sizeof(struct Token),
-                          &token_to_str);
-    }
-}
-
-static void test_tokenization_five(void) {
-    struct Token test[] = {
-        (struct Token){.type = TYPE_FUNCTION, .func_type = FN_LOG_E},
-        (struct Token){.type = TYPE_PAR_LEFT},
-        (struct Token){.type = TYPE_NUMBER, .value = M_E},
-        (struct Token){.type = TYPE_OPERATOR, .op = '^'},
-        (struct Token){.type = TYPE_NUMBER, .value = 2},
-        (struct Token){.type = TYPE_PAR_RIGHT},
-        (struct Token){.type = TYPE_OPERATOR, .op = '+'},
-        (struct Token){.type = TYPE_FUNCTION, .func_type = FN_LOG_10},
-        (struct Token){.type = TYPE_PAR_LEFT},
-        (struct Token){.type = TYPE_NUMBER, .value = 10},
-        (struct Token){.type = TYPE_PAR_RIGHT},
-    };
-    struct TokensList result = tokenize("ln(e^2)+log(10)", NULL);
-    int passed =
-        MLOG.test("ln(e^2)+log(10)",
-                  tokens_arr_equal(result.tokens, test, ARR_SIZE(test)));
-    if (!passed) {
-        MLOG.array_custom(&result, result.tkns_pos, sizeof(struct Token),
-                          &token_to_str);
-    }
-}
-
-static void test_tokenization_six(void) {
-    struct Token test[] = {
-        (struct Token){.type = TYPE_NUMBER, .value = 2},
-        (struct Token){.type = TYPE_OPERATOR, .op = '*'},
-        (struct Token){.type = TYPE_VARIABLE, .symbol = 'x'},
-        (struct Token){.type = TYPE_OPERATOR, .op = '+'},
-        (struct Token){.type = TYPE_NUMBER, .value = 5},
-        (struct Token){.type = TYPE_OPERATOR, .op = '*'},
-        (struct Token){.type = TYPE_VARIABLE, .symbol = 'y'},
-        (struct Token){.type = TYPE_OPERATOR, .op = '+'},
-        (struct Token){.type = TYPE_NUMBER, .value = 3},
-        (struct Token){.type = TYPE_OPERATOR, .op = '*'},
-        (struct Token){.type = TYPE_VARIABLE, .symbol = 'z'},
-        (struct Token){.type = TYPE_OPERATOR, .op = '^'},
-        (struct Token){.type = TYPE_NUMBER, .value = 2},
-    };
-    struct TokensList result = tokenize("2*x + 5*y + 3 * z^2", NULL);
-    int passed =
-        MLOG.test("2*x + 5*y + 3* z^2",
-                  tokens_arr_equal(result.tokens, test, ARR_SIZE(test)));
-    if (!passed) {
-        MLOG.array_custom(&result, result.tkns_pos, sizeof(struct Token),
-                          &token_to_str);
-    }
-}
-
-void test_tokenization(void) {
-    MLOG.log("Tokenization Test Suite");
-    test_tokenization_one();
-    test_tokenization_two();
-    test_tokenization_three();
-    test_tokenization_four();
-    test_tokenization_five();
-    test_tokenization_six();
-}
-
-static void run_parse_test(const char* equ, double expected,
-                           struct MC4_VariableSet* vars) {
-    struct MC4_Result test = MC4_evaluate(equ, vars);
-    int passed = MLOG.test(equ, doubles_mostly_equal(test.value, expected));
-    if (!passed) {
-        MLOG.logf("Expected value: %lf | Found value: %lf", expected,
-                  test.value);
-    }
-}
-
-void test_parsing(void) {
-    MLOG.log("Parsing Test Suite");
-    run_parse_test("2+4", 6, NULL);
-    run_parse_test("(2*4/6)^8", 9.98872123151958, NULL);
-    run_parse_test("cos(arctan(sin(pi/2)))", 0.7071067811865476, NULL);
-    run_parse_test("ln(e^2) + log(10)", 3, NULL);
-    struct MC4_VariableSet vars = new_var_set();
-    set_var(&vars, 'x', 2);
-    set_var(&vars, 'y', 3);
-    set_var(&vars, 'z', 4);
-    run_parse_test("2*x + 5*y + 3 * z^2", 67, &vars);
 }

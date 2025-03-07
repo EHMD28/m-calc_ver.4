@@ -1,4 +1,4 @@
-WFLAGS=-lm -Wall -Wextra -pedantic -std=c11 -fsanitize=address -Wno-unused-function -Werror
+WFLAGS=-lm -Wall -Wextra -pedantic -std=c11 -fsanitize=address -Wno-unused-function -Werror -Wno-unused-command-line-argument
 CLI_DIR=src/cli
 LIBS_DIR=src/libs
 MCALC4_DIR=src/mcalc4
