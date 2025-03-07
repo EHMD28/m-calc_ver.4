@@ -1,6 +1,6 @@
 #include "mcalc4.h"
+#include "../../tests/tests.h"
 #include "../libs/mlogging.h"
-#include "tests.h"
 #include <assert.h>
 #include <ctype.h>
 #include <float.h>
@@ -288,7 +288,9 @@ static void reader_handle_whitespace(struct StringReader* reader) {
 static void reader_handle_op(struct StringReader* reader,
                              struct TokensList* list, MC4_ErrorCode* err) {
     char current_ch = reader_get_current(reader);
-    while (strchr("+-*/^", current_ch) != NULL) {
+    while ((strchr("+-*/^", current_ch) != NULL) && (current_ch != '\0')) {
+        // MLOG.logf("Received character '%c' in reader_handle_op()",
+        // current_ch);
         add_token(list, (struct Token){.type = TYPE_OPERATOR, .op = current_ch},
                   err);
         reader_advance(reader);
@@ -384,7 +386,7 @@ struct TokensList tokenize(const char* equ, MC4_ErrorCode* err) {
     const unsigned int EQU_LEN = strlen(equ);
     struct StringReader reader = new_string_reader(equ);
 
-    while (reader.pos < EQU_LEN) {
+    while (reader.pos <= EQU_LEN) {
         reader_handle_whitespace(&reader);
         reader_handle_op(&reader, &tokens_list, err);
         reader_handle_digit(&reader, &tokens_list, err);
@@ -426,7 +428,7 @@ static char key_to_letter(int key) {
     }
 }
 
-static void set_var(struct MC4_VariableSet* vars, char var, double value) {
+extern void set_var(struct MC4_VariableSet* vars, char var, double value) {
     int key = letter_to_key(var);
     vars->exists_hashmap[key] = true;
     vars->values_hashmap[key] = value;
@@ -583,18 +585,6 @@ double parse_tokens(struct TokensList* list, struct MC4_VariableSet* vars,
      */
     double result = parse_addsub(&parser, err);
     return result;
-}
-
-static struct MC4_Result new_result() {
-    return (struct MC4_Result){
-        .value = 0,
-        .err = MC4_ERR_NONE,
-        .vars =
-            (struct MC4_VariableSet){
-                .exists_hashmap = {false},
-                .values_hashmap = {0},
-            },
-    };
 }
 
 /**

@@ -1,9 +1,25 @@
 #include "cli.h"
-// #include "../libs/mlogging.h"
+#include "../libs/arachne-strlib/arachne_strlib.h"
+#include "../libs/mlogging.h"
 #include "../mcalc4/mcalc4.h"
 #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
+
+enum AngleMode {
+    DEG,
+    RAD,
+};
+
+struct MC4_Settings {
+    enum AngleMode angle_mode;
+};
+
+static struct MC4_Settings settings_default() {
+    return (struct MC4_Settings){
+        .angle_mode = RAD,
+    };
+}
 
 void evaluate_all(const char* equations[], int num_equs) {
     struct MC4_Result result;
@@ -20,129 +36,107 @@ void evaluate_all(const char* equations[], int num_equs) {
     }
 }
 
-static void trim_str_end(char* s, const size_t len) {
-    for (int i = len - 1; isspace(s[i]) && (i > 0); i--)
-        s[i] = '\0';
-}
-
-static void clear_buffer(char* buf, const size_t size) {
-    for (size_t i = 0; i < size; i++) {
-        buf[i] = '\0';
-    }
-}
-
-struct WordReader {
-    const char* src;
-    char buffer[100];
-    size_t pos;
-};
-
-struct WordReader new_word_reader() {
-    return (struct WordReader){
-        .src = NULL,
-        .buffer = {0},
-        .pos = 0,
-    };
-}
-
-static void word_reader_set_src(struct WordReader* reader, const char* s) {
-    clear_buffer(reader->buffer, reader->pos);
-    reader->pos = 0;
-    reader->src = s;
-}
-
-static void word_reader_read_next_word(struct WordReader* reader) {
-    clear_buffer(reader->buffer, strlen(reader->buffer));
-    const int SRC_LEN = strlen(reader->src);
-    for (int i = 0; !isspace(reader->src[reader->pos]) && (i <= SRC_LEN); i++) {
-        reader->buffer[i] = reader->src[reader->pos];
-        reader->pos++;
-    }
-}
-
-static const char* word_reader_get_word(struct WordReader* reader) {
-    return reader->buffer;
-}
+static const char* const HELP_STR =
+    "\nExpressions - Evaluate a mathematical expression. Basic arithmetic\n"
+    "operators (+, -, *, /, and ^) are supported as well as trigonometric\n"
+    "functions(such sin and arctan), logarithms(log and ln), and\n"
+    "constants(e and pi)\n\n"
+    "Variables - Syntax: `let{variable} = {value}`. Set a variable with\n"
+    "name {variable} to {value} {Value can be} any valid expression.\n\n"
+    "Settings - Syntax: `set{setting_name} { value }`. There are a\n"
+    "few settings in M-Calculator 4 which can be adjusted: ANGLE_MODE,\n"
+    "{TBD}...\n";
 
 enum Command {
     CMD_LET,
     CMD_SET,
     CMD_HELP,
-    CMD_INVALID,
+    CMD_QUIT,
+    CMD_NONE,
 };
 
-static enum Command str_to_cmd(const char* s) {
-    if (strcmp(s, "let") == 0) {
-        return CMD_LET;
-    } else if (strcmp(s, "set") == 0) {
-        return CMD_SET;
-    } else if (strcmp(s, "help") == 0) {
-        return CMD_HELP;
-    } else {
-        return CMD_INVALID;
+static const char* command_to_str(enum Command command) {
+    switch (command) {
+    case CMD_LET: return "CMD_LET";
+    case CMD_SET: return "CMD_SET";
+    case CMD_HELP: return "CMD_HELP";
+    case CMD_QUIT: return "CMD_QUIT";
+    case CMD_NONE: return "CMD_NONE";
+    default: return NULL;
     }
 }
 
-static void parse_let_command(struct WordReader* reader) {
-    puts("1");
-    (void)reader;
+static enum Command str_to_command(const char* s) {
+    if (strcasecmp(s, "let") == 0) {
+        return CMD_LET;
+    } else if (strcasecmp(s, "set") == 0) {
+        return CMD_SET;
+    } else if (strcasecmp(s, "help") == 0) {
+        return CMD_HELP;
+    } else if ((strcasecmp(s, "quit") == 0) || (strcasecmp(s, "exit") == 0)) {
+        return CMD_QUIT;
+    } else {
+        return CMD_NONE;
+    }
 }
 
-static void parse_set_command(struct WordReader* reader) {
-    puts("2");
-    (void)reader;
+static void handle_let_command(ArachneString* astr,
+                               struct MC4_VariableSet* varset) {
+    (void)astr;
+    (void)varset;
 }
 
-static void parse_help_command(struct WordReader* reader) {
-    (void)reader;
-    puts(
-        "\nExpressions - Evaluate a mathematical expression. Basic arithmetic\n"
-        "operators (+, -, *, /, and ^) are supported as well as trigonometric\n"
-        "functions (such sin and arctan), logarithms (log and ln), and\n"
-        "constants (e and pi)\n\n"
-        "Variables - Syntax: `let {variable} = {value}`. Set a variable with\n"
-        "name {variable} to {value}. {Value can be} any valid expression.\n\n"
-        "Settings - Syntax: `set {setting_name} {value}`. There are a\n"
-        "few ssettings in M-Calculator 4 which can be adjusted: ANGLE_MODE,\n"
-        "{TBD}...\n");
+static void handle_set_command(ArachneString* astr,
+                               struct MC4_Settings* settings) {
+    (void)astr;
+    (void)settings;
 }
 
-#define BUFFER_SIZE 512
-#define FIRST_WORD_BUF_SIZE 100
+static void handle_command(enum Command command, ArachneString* astr,
+                           struct MC4_VariableSet* varset,
+                           struct MC4_Settings* settings) {
+    switch (command) {
+    case CMD_LET: handle_let_command(astr, varset); break;
+    case CMD_SET: handle_set_command(astr, settings); break;
+    case CMD_HELP: puts(HELP_STR); break;
+    case CMD_QUIT: /* handled elsewere */ break;
+    default: break;
+    }
+}
 
 void start_cli() {
-    bool has_exited = false;
-    char buffer[BUFFER_SIZE] = {0};
-    struct WordReader word_reader = new_word_reader();
-    MC4_Result result;
+    // TODO: Add tests
+    // struct Settings settings = settings_default();
+    char buffer[512] = {0};
+    (void)HELP_STR;
+    // const char* current_word = NULL;
+    // enum Command command = CMD_NONE;
+    struct MC4_VariableSet vars = new_varset();
+    struct MC4_Settings settings = settings_default();
+    ArachneString astr = arachne_new_str(buffer);
 
-    while (!has_exited) {
-        clear_buffer(buffer, BUFFER_SIZE);
-        printf("mcalc4> ");
-        if (fgets(buffer, BUFFER_SIZE, stdin) == NULL) {
-            has_exited = true;
-            continue;
-        }
-        trim_str_end(buffer, strlen(buffer));
-        word_reader_set_src(&word_reader, buffer);
-        word_reader_read_next_word(&word_reader);
-        // puts(word_reader_get_word(&word_reader));
-        enum Command command = str_to_cmd(word_reader_get_word(&word_reader));
-        switch (command) {
-        case CMD_LET: parse_let_command(&word_reader); break;
-        case CMD_SET: parse_set_command(&word_reader); break;
-        case CMD_HELP: parse_help_command(&word_reader); break;
-        case CMD_INVALID:
-            {
-                result = MC4_evaluate(buffer, NULL);
-                if (MC4_error_occured(&result)) {
-                    printf("%s = ERROR\n", buffer);
-                } else {
-                    printf("%s = %lf\n", buffer, result.value);
-                }
-            }
+    while (true) {
+        printf("(mcalc4) ");
+        /* Break when fgets() encounted an EOF. */
+        if (fgets(buffer, 512, stdin) == NULL) break;
+        arachne_set_str(&astr, buffer);
+        const char* command_str = arachne_read_word(&astr);
+        enum Command command = str_to_command(command_str);
+        if (command == CMD_QUIT) {
             break;
-        default: puts("Unrecognized command");
+        } else {
+            handle_command(command, &astr, &vars, &settings);
+            // MLOG.panicf("TODO in %s", __FILE__);
         }
+        // trim_str_end(buffer);
+        // MLOG.logf("Buffer: '%s'", buffer);
+        // command_reader_set_src(&reader, buffer);
+        // current_word = cmd_reader_read_word(&reader);
+        // command = str_to_command(current_word);
+        // if (command == CMD_QUIT) {
+        //     break;
+        // } else {
+        //     handle_command(command, &reader);
+        // }
     }
 }

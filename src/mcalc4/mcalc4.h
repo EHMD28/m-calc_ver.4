@@ -26,11 +26,28 @@ struct MC4_VariableSet {
     bool exists_hashmap[MC4_VARSET_SIZE];
 };
 
+static struct MC4_VariableSet new_varset() {
+    return (struct MC4_VariableSet) {
+        .values_hashmap = { 0 },
+        .exists_hashmap = { false },
+    };
+}
+ 
+void set_var(struct MC4_VariableSet* vars, char var, double value);
+
 typedef struct MC4_Result {
     double value;
     MC4_ErrorCode err;
     struct MC4_VariableSet vars;
 } MC4_Result;
+
+static MC4_Result new_result() {
+    return (MC4_Result) {
+        .value = 0,
+        .err = MC4_ERR_NONE,
+        .vars = new_varset(),
+    };
+}
 
 static const char* MC4_ErrorCode_to_str(MC4_ErrorCode code) {
     switch (code) {
