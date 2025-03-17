@@ -1,6 +1,6 @@
 WFLAGS=-lm -Wall -Wextra -pedantic -std=c11 -fsanitize=address -Wno-unused-function -Werror -Wno-unused-command-line-argument
 CLI_DIR=src/cli
-LIBS_DIR=src/libs
+LIBS_DIR=libs
 MCALC4_DIR=src/mcalc4
 CLI_DIR=src/cli
 # CC=gcc
@@ -22,7 +22,7 @@ arachne.o:
 
 libs: arachne.o
 
-tests: $(TEST_DIR)/tests.c $(TEST_DIR)/mcalc4_tests.c $(TEST_DIR)/cli_tests.c mcalc4.o arachne.o
+tests: $(TEST_DIR)/tests.c $(TEST_DIR)/mcalc4_tests.c $(TEST_DIR)/cli_tests.c mcalc4.o arachne.o cli.o
 	$(CC) -o app-tests $(TEST_DIR)/tests.c\
 					$(TEST_DIR)/mcalc4_tests.c\
 					$(TEST_DIR)/cli_tests.c\
