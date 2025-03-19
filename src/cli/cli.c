@@ -82,9 +82,25 @@ static enum Command str_to_command(const char* s) {
 
 static void handle_let_command(ArachneString* astr,
                                struct MC4_VariableSet* varset) {
-    (void)astr;
-    (void)varset;
-    ;
+    const char* var_name_str = arachne_read_word(astr);
+    if (var_name_str == NULL)
+        MLOG.todo("Variable name was not found.", __FILE__, __LINE__);
+    if (strlen(var_name_str) != 1)
+        MLOG.todo("Variable name was too long.", __FILE__, __LINE__);
+    if (!isalpha(var_name_str[0]))
+        MLOG.todo("Variable was not alpha character.", __FILE__, __LINE__);
+    const char var_name = var_name_str[0];
+    const char* equal_sign = arachne_read_word(astr);
+    if (equal_sign == NULL)
+        MLOG.todo("Equal sign was not found", __FILE_NAME__, __LINE__);
+    if (strcmp(equal_sign, "=") != 0)
+        MLOG.todo("Unexpected character. Expected '='", __FILE__, __LINE__);
+    const char* expression = arachne_read_rest(astr);
+    // TODO: handle errors
+    MC4_Result result = MC4_evaluate(expression, varset);
+    set_var(varset, var_name, result.value);
+    MLOG.logf("Set variable '%c' to %lf", var_name, result.value);
+    arachne_free(astr);
 }
 
 static void handle_set_command(ArachneString* astr,
@@ -110,8 +126,6 @@ void start_cli() {
     // struct Settings settings = settings_default();
     char buffer[512] = {0};
     (void)HELP_STR;
-    // const char* current_word = NULL;
-    // enum Command command = CMD_NONE;
     struct MC4_VariableSet vars = new_varset();
     struct MC4_Settings settings = settings_default();
     ArachneString astr = arachne_new_str(buffer);
@@ -127,7 +141,7 @@ void start_cli() {
             break;
         } else {
             handle_command(command, &astr, &vars, &settings);
-            // MLOG.panicf("TODO in %s", __FILE__);
+            // MLOG.todo(NULL, __FILE__, __LINE__);
         }
     }
 }

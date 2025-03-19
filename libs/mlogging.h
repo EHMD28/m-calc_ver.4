@@ -64,12 +64,12 @@ static void _internal_mlog_todo(const char* info, const char* file, int line);
 
 /* Configuration */
 typedef enum {
-    MLOG_CONF_LOG_ON = (1 << 0),   // 0b00000001
-    MLOG_CONF_ERR_ON = (1 << 1),   // 0b00000010
-    MLOG_CONF_TEST_ON = (1 << 2),  // 0b00000100
-    MLOG_CONF_PANIC_ON = (1 << 3), // 0b00001000
-    MLOG_CONF_ALL_ON = 0x0F,       // 0b00001111
-    MLOG_CONF_ALL_OFF = 0,         // 0b00000000
+    MLOG_CONF_LOG_ON = (1 << 0),  
+    MLOG_CONF_ERR_ON = (1 << 1),  
+    MLOG_CONF_TEST_ON = (1 << 2), 
+    MLOG_CONF_PANIC_ON = (1 << 3),
+    MLOG_CONF_ALL_ON = MLOG_CONF_LOG_ON | MLOG_CONF_ERR_ON | MLOG_CONF_TEST_ON | MLOG_CONF_PANIC_ON,
+    MLOG_CONF_ALL_OFF = 0,
 } MLOG_Config;
 
 static void _internal__mlog_set_config(MLOG_Config config);

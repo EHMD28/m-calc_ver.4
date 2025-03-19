@@ -72,6 +72,7 @@ extern const char* arachne_get_range(struct ArachneString* astr) {
 
 extern void arachne_free(struct ArachneString* astr) {
     free(astr->buf);
+    astr->buf = NULL;
 }
 
 extern const char* arachne_read_chars(struct ArachneString* astr,
