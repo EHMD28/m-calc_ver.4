@@ -14,6 +14,7 @@
 #include <stddef.h>
 #include "../../libs/mlogging.h"
 #include "mcalc4_types.h"
+#include "../cli/cli_types.h"
 
 static struct MC4_VariableSet new_varset() {
     return (struct MC4_VariableSet){
@@ -52,29 +53,33 @@ static void set_var(struct MC4_VariableSet* vars, char var, double value) {
 
 typedef struct MC4_Result {
     double value;
-    MC4_ErrorCode err;
+    MC4_ErrorCode err_code;
     struct MC4_VariableSet vars;
 } MC4_Result;
 
 static MC4_Result new_result() {
     return (MC4_Result){
         .value = 0,
-        .err = MC4_ERR_NONE,
+        .err_code = MC4_ERR_NONE,
         .vars = new_varset(),
     };
 }
 
-static const char* MC4_ErrorCode_to_str(MC4_ErrorCode code) {
+static const char* _MC4_ErrorCode_to_str(MC4_ErrorCode code) {
     switch (code) {
     case MC4_ERR_NONE: return "No Error";
     default: return NULL;
     }
 }
 
-static bool MC4_error_occured(MC4_Result* result) {
-    return (result->err != MC4_ERR_NONE);
+static const char* MC4_get_error_str(MC4_Result* result) {
+    return _MC4_ErrorCode_to_str(result->err_code);
 }
 
-struct MC4_Result MC4_evaluate(const char* equ, struct MC4_VariableSet* vars);
+static bool MC4_error_occured(MC4_Result* result) {
+    return (result->err_code != MC4_ERR_NONE);
+}
+
+struct MC4_Result MC4_evaluate(const char* equ, struct MC4_VariableSet* vars, struct MC4_Settings* settings);
 
 #endif

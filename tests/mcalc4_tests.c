@@ -232,7 +232,8 @@ void test_tokenization(void) {
 
 static void run_parse_test(const char* equ, double expected,
                            struct MC4_VariableSet* vars) {
-    struct MC4_Result test = MC4_evaluate(equ, vars);
+    struct MC4_Settings settings = settings_default();
+    struct MC4_Result test = MC4_evaluate(equ, vars, &settings);
     int passed = MLOG.test(equ, doubles_mostly_equal(test.value, expected));
     if (!passed) {
         MLOG.logf("Expected value: %lf | Found value: %lf", expected,

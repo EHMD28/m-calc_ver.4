@@ -1,6 +1,7 @@
 #include "mcalc4.h"
 #include "../../libs/mlogging.h"
 // #include "../../tests/tests.h"
+#include "../cli/cli_types.h"
 #include "mcalc4_types.h"
 #include <assert.h>
 #include <ctype.h>
@@ -360,21 +361,41 @@ void parser_consume(struct Parser* parser, enum TokenType type) {
     }
 }
 
-double parse_func(struct Parser* parser, MC4_ErrorCode* err);
-double parse_exp(struct Parser* parser, MC4_ErrorCode* err);
-double parse_multdiv(struct Parser* parser, MC4_ErrorCode* err);
-double parse_addsub(struct Parser* parser, MC4_ErrorCode* err);
-double parse_numpar(struct Parser* parser, MC4_ErrorCode* err);
+double parse_func(struct Parser* parser, MC4_ErrorCode* err,
+                  enum AngleMode angle_mode);
+double parse_exp(struct Parser* parser, MC4_ErrorCode* err,
+                 enum AngleMode angle_mode);
+double parse_multdiv(struct Parser* parser, MC4_ErrorCode* err,
+                     enum AngleMode angle_mode);
+double parse_addsub(struct Parser* parser, MC4_ErrorCode* err,
+                    enum AngleMode angle_mode);
+double parse_numpar(struct Parser* parser, MC4_ErrorCode* err,
+                    enum AngleMode angle_mode);
 
-double parse_func(struct Parser* parser, MC4_ErrorCode* err) {
+/**
+ * Preforms the conversion from degrees to radians (if necessary).
+ */
+double convert_angle_units(double angle, enum AngleMode angle_mode) {
+    if (angle_mode == ANGLE_MODE_RAD) {
+        return angle;
+    } else if (angle_mode == ANGLE_MODE_DEG) {
+        return angle * (M_PI / 180);
+    } else {
+        MLOG.todo("Return an error.", __FILE__, __LINE__);
+        return 0;
+    }
+}
+
+double parse_func(struct Parser* parser, MC4_ErrorCode* err,
+                  enum AngleMode angle_mode) {
     struct Token* current = parser_get_current(parser);
     if (current->type == TYPE_FUNCTION) {
         parser_consume(parser, TYPE_FUNCTION);
-        double value = parse_func(parser, err);
+        double value = parse_func(parser, err, angle_mode);
         switch (current->func_type) {
-        case FN_SIN: return sin(value);
-        case FN_COS: return cos(value);
-        case FN_TAN: return tan(value);
+        case FN_SIN: return sin(convert_angle_units(value, angle_mode));
+        case FN_COS: return cos(convert_angle_units(value, angle_mode));
+        case FN_TAN: return tan(convert_angle_units(value, angle_mode));
         case FN_ASIN: return asin(value);
         case FN_ACOS: return acos(value);
         case FN_ATAN: return atan(value);
@@ -384,59 +405,63 @@ double parse_func(struct Parser* parser, MC4_ErrorCode* err) {
     } else if ((current->type == TYPE_PAR_LEFT) ||
                (current->type == TYPE_NUMBER) ||
                (current->type == TYPE_VARIABLE)) {
-        return parse_numpar(parser, err);
+        return parse_numpar(parser, err, angle_mode);
     } else {
         MLOG.error("In parse_func()");
     }
     return 0;
 }
 
-double parse_exp(struct Parser* parser, MC4_ErrorCode* err) {
-    double value = parse_func(parser, err);
+double parse_exp(struct Parser* parser, MC4_ErrorCode* err,
+                 enum AngleMode angle_mode) {
+    double value = parse_func(parser, err, angle_mode);
     struct Token* current = parser_get_current(parser);
     while (current->type == TYPE_OPERATOR && current->op == '^') {
         parser_consume(parser, TYPE_OPERATOR);
-        value = pow(value, parse_func(parser, err));
+        value = pow(value, parse_func(parser, err, angle_mode));
         current = parser_get_current(parser);
     }
     return value;
 }
 
-double parse_multdiv(struct Parser* parser, MC4_ErrorCode* err) {
-    double value = parse_exp(parser, err);
+double parse_multdiv(struct Parser* parser, MC4_ErrorCode* err,
+                     enum AngleMode angle_mode) {
+    double value = parse_exp(parser, err, angle_mode);
     struct Token* current = parser_get_current(parser);
     while (current->type == TYPE_OPERATOR &&
            ((current->op == '*') || (current->op == '/'))) {
         if (current->op == '*') {
             parser_consume(parser, TYPE_OPERATOR);
-            value *= parse_exp(parser, err);
+            value *= parse_exp(parser, err, angle_mode);
         } else {
             parser_consume(parser, TYPE_OPERATOR);
-            value /= parse_exp(parser, err);
+            value /= parse_exp(parser, err, angle_mode);
         }
         current = parser_get_current(parser);
     }
     return value;
 }
 
-double parse_addsub(struct Parser* parser, MC4_ErrorCode* err) {
-    double value = parse_multdiv(parser, err);
+double parse_addsub(struct Parser* parser, MC4_ErrorCode* err,
+                    enum AngleMode angle_mode) {
+    double value = parse_multdiv(parser, err, angle_mode);
     struct Token* current = parser_get_current(parser);
     while (current->type == TYPE_OPERATOR &&
            ((current->op == '+') || (current->op == '-'))) {
         if (current->op == '+') {
             parser_consume(parser, TYPE_OPERATOR);
-            value += parse_multdiv(parser, err);
+            value += parse_multdiv(parser, err, angle_mode);
         } else {
             parser_consume(parser, TYPE_OPERATOR);
-            value -= parse_multdiv(parser, err);
+            value -= parse_multdiv(parser, err, angle_mode);
         }
         current = parser_get_current(parser);
     }
     return value;
 }
 
-double parse_numpar(struct Parser* parser, MC4_ErrorCode* err) {
+double parse_numpar(struct Parser* parser, MC4_ErrorCode* err,
+                    enum AngleMode angle_mode) {
     struct Token* current = parser_get_current(parser);
     if (current->type == TYPE_NUMBER) {
         parser_consume(parser, TYPE_NUMBER);
@@ -453,7 +478,7 @@ double parse_numpar(struct Parser* parser, MC4_ErrorCode* err) {
         }
     } else if (current->type == TYPE_PAR_LEFT) {
         parser_consume(parser, TYPE_PAR_LEFT);
-        double value = parse_addsub(parser, err);
+        double value = parse_addsub(parser, err, angle_mode);
         parser_consume(parser, TYPE_PAR_RIGHT);
         return value;
     } else {
@@ -467,11 +492,11 @@ double parse_numpar(struct Parser* parser, MC4_ErrorCode* err) {
  * the expression as a double.
  */
 double parse_tokens(struct TokensList* list, struct MC4_VariableSet* vars,
-                    MC4_ErrorCode* err) {
+                    MC4_ErrorCode* err, enum AngleMode angle_mode) {
     struct Parser parser = new_parser(list, vars);
     /* Recursive descent parser starts in terms of lowest order of operations.
      */
-    double result = parse_addsub(&parser, err);
+    double result = parse_addsub(&parser, err, angle_mode);
     return result;
 }
 
@@ -483,13 +508,15 @@ double parse_tokens(struct TokensList* list, struct MC4_VariableSet* vars,
  * writtent to err.
  * @return result
  */
-struct MC4_Result MC4_evaluate(const char* equ, struct MC4_VariableSet* vars) {
+struct MC4_Result MC4_evaluate(const char* equ, struct MC4_VariableSet* vars,
+                               struct MC4_Settings* settings) {
     struct MC4_Result result = new_result();
     if (vars != NULL) {
         load_vars(&result, vars);
     }
-    MC4_ErrorCode* err = &result.err;
+    MC4_ErrorCode* err = &result.err_code;
     struct TokensList tokens_list = tokenize(equ, err);
-    result.value = parse_tokens(&tokens_list, &result.vars, err);
+    result.value =
+        parse_tokens(&tokens_list, &result.vars, err, settings->angle_mode);
     return result;
 }
