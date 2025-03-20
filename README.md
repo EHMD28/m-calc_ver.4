@@ -1,6 +1,8 @@
 # M-Calculator Version 4
 
-A fully featured CLI scientific calculator. **THIS PROJECT IS A WIP**
+A fully featured CLI scientific calculator (which I probably should have written
+this in Rust because string parsing in C is physically painful).
+**WARNING: THIS PROJECT IS MOSTLY FINISHED, BUT STILL A WIP**
 
 ## Usage
 
@@ -13,38 +15,47 @@ exit.
 ### Demo
 ```
 $ mcaclc4
-mcalc4> 2 + 4
-2 + 4 = 6
-mcalc4> sin(pi/4)
-sin(pi/4) = 0.7071
-mcalc4> settings ANGLE RAD
-sin(45) = 0.7071
-mcalc4> set x = 4
-x = 4
-mcalc4> print x
-x = 4
-mcalc4> print "history.txt"
-Writing history to "history.txt"
-mcalc4> exit
+(mcalc4) cos(pi)
+cos(pi) = -1.0
+(mcalc4) set angle rad
+(mcalc4) cos(pi)
+cos(pi) = 0.9984
+(mcalc4) cos(180)
+cos(180) = -1.0
+(mcalc4) exit
 $ 
 ```
 
 ## Expressions
+All expressions are case insensitive, so there is no need to worry about
+capitalization.
 
-When an input is given to `mcalc4` with a first word that isn't one of the 
-designated commands, the input will be evaluates as a mathematical expression.
-These expressions can include all of the basic arithmetic operators
-(`+, -, *, /, ^`), functions such as `sin`, `cos`, `tan`, `arcsin`, `arccos`,
-and `arctan`, and constants such as `pi` and `e`. All of these values are case
-insinsitive, so don't worry about capitalization. **It is important to note that
-π is not recognized by the calculator, alongside all other Unicode characters.**
+* Operators
+    * `+`, `-`, `*`, `/`, and `^`.
+* Functions
+    * `sin`, `cos`, and `tan`.
+    * `arcsin`, `arccos`, and `arcctan`.
+    * `log` (base 10) and `ln`.
+* Constants
+    * `pi` and `e`.
 
 ## Variables
-The syntax for declaring variables in `mcacl4` is `mcalc4> set {var_name} = 4`.
-Variables can be accessed by using them in expressions such as `2 * x` or
-`x ^ 2`. Note that `e` cannot be used as a variable name because it is a
-constant.
+
+Syntax: `let {VARIABLE_NAME} = {EXPRESSION}`. Note that variable name must be
+one alphabetical character and expression must be a valid mathematical
+expression. Also, `e` cannot be used as a variable name because it is also a
+constant. 
+
+```
+(mcalc4) let x = 5
+(mcalc4) x * 2 = 10.0
+```
 
 ## Settings
 
-## Print
+Syntax: `set {SETTING_NAME} {VALUE}`.
+
+* Setting Names:
+    * `angle`
+        * `rad` - Sets the angle to radians.
+        * `deg` - Sets the angle to degrees.
