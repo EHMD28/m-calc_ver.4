@@ -3,7 +3,7 @@
 
 #include <stddef.h>
 
-#define MAX_TOKENS 100 // Current 100 for testing purposes, increase in future.
+#define MAX_TOKENS 1000
 #define MC4_VARSET_SIZE 52
 #define MC4_VARSET_HALF_SIZE (MC4_VARSET_SIZE / 2)
 

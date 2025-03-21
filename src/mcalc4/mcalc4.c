@@ -1,6 +1,5 @@
 #include "mcalc4.h"
 #include "../../libs/mlogging.h"
-// #include "../../tests/tests.h"
 #include "../cli/cli_types.h"
 #include "mcalc4_types.h"
 #include <assert.h>
@@ -71,14 +70,12 @@ void add_token(struct TokensList* list, struct Token token,
         *err = MC4_ERR_MAX_TOKENS;
         return;
     } else {
-        // MLOG_logf("Added token: %s", token_to_str(&token));
         list->tokens[list->tkns_pos] = token;
         list->tkns_pos++;
     }
 }
 
 double read_num(struct StringReader* reader, MC4_ErrorCode* err) {
-    // TODO: Add error handling for read_num().
     double whole_part = 0.0;
     double decimal_part = 0.0;
 
@@ -103,8 +100,6 @@ double read_num(struct StringReader* reader, MC4_ErrorCode* err) {
             }
         }
     }
-    /* backtracks to prevent skipping next char */
-    // reader_move_back(reader);
     return whole_part + decimal_part;
 }
 
@@ -182,8 +177,6 @@ static void reader_handle_op(struct StringReader* reader,
                              struct TokensList* list, MC4_ErrorCode* err) {
     char current_ch = reader_get_current(reader);
     while ((strchr("+-*/^", current_ch) != NULL) && (current_ch != '\0')) {
-        // MLOG.logf("Received character '%c' in reader_handle_op()",
-        // current_ch);
         add_token(list, (struct Token){.type = TYPE_OPERATOR, .op = current_ch},
                   err);
         reader_advance(reader);
@@ -273,7 +266,6 @@ static void reader_handle_var(struct StringReader* reader,
  * written to `err`.
  */
 struct TokensList tokenize(const char* equ, MC4_ErrorCode* err) {
-    // TODO: add error handling in tokenize().
     struct TokensList tokens_list = new_list();
     const unsigned int EQU_LEN = strlen(equ);
     struct StringReader reader = new_string_reader(equ);
@@ -297,34 +289,6 @@ static struct MC4_VariableSet new_var_set() {
     return (struct MC4_VariableSet){.exists_hashmap = {false},
                                     .values_hashmap = {0}};
 }
-
-// static int letter_to_key(char ch) {
-//     if (isupper(ch))
-//         return ch - 'A';
-//     else if (islower(ch)) {
-//         return (ch - 'a') + MC4_VARSET_HALF_SIZE;
-//     } else {
-//         MLOG.errorf("letter_to_key() - invalid letter: %c", ch);
-//         return 0;
-//     }
-// }
-
-// static char key_to_letter(int key) {
-//     if ((key >= 0) && (key < MC4_VARSET_HALF_SIZE)) {
-//         return key + 'A';
-//     } else if ((key >= MC4_VARSET_HALF_SIZE) && (key < MC4_VARSET_SIZE)) {
-//         return key - MC4_VARSET_HALF_SIZE + 'a';
-//     } else {
-//         MLOG.errorf("key_to_letter() - invalid key: %d", key);
-//         return 0;
-//     }
-// }
-
-// extern void set_var(struct MC4_VariableSet* vars, char var, double value) {
-//     int key = letter_to_key(var);
-//     vars->exists_hashmap[key] = true;
-//     vars->values_hashmap[key] = value;
-// }
 
 static void load_vars(struct MC4_Result* result, struct MC4_VariableSet* vars) {
     for (int i = 0; i < MC4_VARSET_SIZE; i++) {

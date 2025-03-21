@@ -3,19 +3,22 @@
 #include "../../libs/mlogging.h"
 #include "../mcalc4/mcalc4.h"
 #include "cli_types.h"
-// #include <ctype.h>
 #include <stdio.h>
 #include <string.h>
 
+static void print_syntax_error(const char* info) {
+    printf("Syntax Error: %s.\n", info);
+}
+
 void evaluate_all(const char* equations[], int num_equs) {
     struct MC4_Result result;
+    struct MC4_Settings settings;
 
     for (int i = 1; i < num_equs; i++) {
-        result = MC4_evaluate(equations[i], NULL, NULL);
-
+        result = MC4_evaluate(equations[i], NULL, &settings);
         if (MC4_error_occured(&result)) {
-            printf("%s = ERROR\nAn Error occured\n", equations[i]);
-            // TODO: implement error handling in main
+            printf("%s = ERROR\n", equations[i]);
+            print_syntax_error(MC4_get_error_str(&result));
         } else {
             printf("%s = %lf\n", equations[i], result.value);
         }
@@ -103,10 +106,6 @@ enum CommandParseError {
     CPE_EXPECTED_SET_VALUE,
     CPE_INVALID_SET_VALUE,
 };
-
-static void print_syntax_error(const char* info) {
-    printf("Syntax Error: %s.\n", info);
-}
 
 static enum CommandParseError
 handle_let_command(ArachneString* astr, struct MC4_VariableSet* varset,
@@ -201,7 +200,6 @@ static void handle_command(enum Command command, ArachneString* astr,
 }
 
 void start_cli() {
-    // TODO: Add tests
     char buffer[512] = {0};
     struct MC4_VariableSet varset = new_varset();
     struct MC4_Settings settings = settings_default();

@@ -134,9 +134,6 @@ static void _internal__mlog_set_config(MLOG_Config config) {
     MLOG._internal__config = config;
 }
 
-// /* Used for setting configuration for MLOG. Default value is all initialized.
-// */ static MLOG_Config MLOG._internal__config = MLOG_CONF_ALL_ON;
-
 /* basic logging */
 
 static void _internal__mlog_log(const char* msg) {
