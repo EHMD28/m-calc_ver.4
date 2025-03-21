@@ -3,6 +3,13 @@
 A fully featured CLI scientific calculator (which I probably should have written
 this in Rust because string parsing in C is physically painful).
 
+## Building
+Requirements: `make` and a C-compiler such as `gcc` or `clang`.
+
+1. `git clone https://github.com/EHMD28/m-calc_ver.4.git`.
+2. `cd m-calc_ver.4`.
+3. `make app`.
+
 ## Usage
 
 Start `mcalc4` by typing in `mcalc4` command with no arguments. If there
