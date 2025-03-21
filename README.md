@@ -14,7 +14,7 @@ exit.
 
 ### Demo
 ```
-$ mcaclc4
+$ mcalc4
 (mcalc4) cos(pi)
 cos(pi) = -1.0
 (mcalc4) set angle rad
