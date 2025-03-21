@@ -2,7 +2,6 @@
 
 A fully featured CLI scientific calculator (which I probably should have written
 this in Rust because string parsing in C is physically painful).
-**WARNING: THIS PROJECT IS MOSTLY FINISHED, BUT STILL A WIP**
 
 ## Usage
 
