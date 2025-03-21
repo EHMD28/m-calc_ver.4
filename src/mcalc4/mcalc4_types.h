@@ -61,6 +61,8 @@ struct TokensList {
 typedef enum {
     MC4_ERR_NONE,
     MC4_ERR_MAX_TOKENS,
+    MC4_ERR_UNEXPECTED_TOKEN,
+    MC4_ERR_NUM_FMT_ERR,
     MC4_ERR_VAR_NOT_FOUND,
 } MC4_ErrorCode;
 

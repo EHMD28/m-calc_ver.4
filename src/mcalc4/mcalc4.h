@@ -67,8 +67,11 @@ static MC4_Result new_result() {
 
 static const char* _MC4_ErrorCode_to_str(MC4_ErrorCode code) {
     switch (code) {
-    case MC4_ERR_NONE: return "No Error";
-    default: return NULL;
+    case MC4_ERR_NONE: return "No error";
+    case MC4_ERR_MAX_TOKENS: return "Max tokens";
+    case MC4_ERR_NUM_FMT_ERR: return "Number formatting error";
+    case MC4_ERR_VAR_NOT_FOUND: return "Variable not found";
+    case MC4_ERR_UNEXPECTED_TOKEN: return "Unexpected token";
     }
 }
 

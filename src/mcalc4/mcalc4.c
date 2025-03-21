@@ -69,7 +69,6 @@ void add_token(struct TokensList* list, struct Token token,
                MC4_ErrorCode* err) {
     if (list->tkns_pos >= MAX_TOKENS) {
         *err = MC4_ERR_MAX_TOKENS;
-        MLOG.error("Too many tokens.");
         return;
     } else {
         // MLOG_logf("Added token: %s", token_to_str(&token));
@@ -78,7 +77,7 @@ void add_token(struct TokensList* list, struct Token token,
     }
 }
 
-double read_num(struct StringReader* reader) {
+double read_num(struct StringReader* reader, MC4_ErrorCode* err) {
     // TODO: Add error handling for read_num().
     double whole_part = 0.0;
     double decimal_part = 0.0;
@@ -92,10 +91,16 @@ double read_num(struct StringReader* reader) {
     if (reader_get_current(reader) == '.') {
         reader_advance(reader);
 
-        while (isdigit(reader_get_current(reader))) {
-            decimal_part += (reader_get_current(reader) - '0') / divisor;
-            divisor *= 10;
-            reader_advance(reader);
+        while (isdigit(reader_get_current(reader)) ||
+               (reader_get_current(reader) == '.')) {
+            if (reader_get_current(reader) == '.') {
+                *err = MC4_ERR_NUM_FMT_ERR;
+                return 0;
+            } else {
+                decimal_part += (reader_get_current(reader) - '0') / divisor;
+                divisor *= 10;
+                reader_advance(reader);
+            }
         }
     }
     /* backtracks to prevent skipping next char */
@@ -192,7 +197,7 @@ static void reader_handle_op(struct StringReader* reader,
 static void reader_handle_digit(struct StringReader* reader,
                                 struct TokensList* list, MC4_ErrorCode* err) {
     if (isdigit(reader_get_current(reader))) {
-        double value = read_num(reader);
+        double value = read_num(reader, err);
         add_token(list, (struct Token){.type = TYPE_NUMBER, .value = value},
                   err);
     }
@@ -210,7 +215,6 @@ static void reader_handle_par(struct StringReader* reader,
         } else {
             add_token(list, (struct Token){.type = TYPE_PAR_RIGHT}, err);
         }
-
         reader_advance(reader);
         current_ch = reader_get_current(reader);
     }
@@ -349,15 +353,13 @@ struct Token* parser_get_current(struct Parser* parser) {
     return &parser->tokens[parser->pos];
 }
 
-void parser_consume(struct Parser* parser, enum TokenType type) {
+void parser_consume(struct Parser* parser, enum TokenType type,
+                    MC4_ErrorCode* err) {
     struct Token* current = parser_get_current(parser);
-
     if (current->type == type) {
         parser->pos++;
     } else {
-        // MLOG.panicf("Unexpected token: %s. Expected: %s",
-        // token_to_str(current),
-        //             token_type_to_str(type));
+        *err = MC4_ERR_UNEXPECTED_TOKEN;
     }
 }
 
@@ -381,7 +383,7 @@ double convert_angle_units(double angle, enum AngleMode angle_mode) {
     } else if (angle_mode == ANGLE_MODE_DEG) {
         return angle * (M_PI / 180);
     } else {
-        MLOG.todo("Return an error.", __FILE__, __LINE__);
+        MLOG.panic("Angle mode should only be a valid state.");
         return 0;
     }
 }
@@ -390,8 +392,9 @@ double parse_func(struct Parser* parser, MC4_ErrorCode* err,
                   enum AngleMode angle_mode) {
     struct Token* current = parser_get_current(parser);
     if (current->type == TYPE_FUNCTION) {
-        parser_consume(parser, TYPE_FUNCTION);
+        parser_consume(parser, TYPE_FUNCTION, err);
         double value = parse_func(parser, err, angle_mode);
+        if ((*err) != MC4_ERR_NONE) return 0;
         switch (current->func_type) {
         case FN_SIN: return sin(convert_angle_units(value, angle_mode));
         case FN_COS: return cos(convert_angle_units(value, angle_mode));
@@ -405,9 +408,13 @@ double parse_func(struct Parser* parser, MC4_ErrorCode* err,
     } else if ((current->type == TYPE_PAR_LEFT) ||
                (current->type == TYPE_NUMBER) ||
                (current->type == TYPE_VARIABLE)) {
-        return parse_numpar(parser, err, angle_mode);
+        double value = parse_numpar(parser, err, angle_mode);
+        if ((*err) != MC4_ERR_NONE)
+            return 0;
+        else
+            return value;
     } else {
-        MLOG.error("In parse_func()");
+        *err = MC4_ERR_UNEXPECTED_TOKEN;
     }
     return 0;
 }
@@ -417,8 +424,9 @@ double parse_exp(struct Parser* parser, MC4_ErrorCode* err,
     double value = parse_func(parser, err, angle_mode);
     struct Token* current = parser_get_current(parser);
     while (current->type == TYPE_OPERATOR && current->op == '^') {
-        parser_consume(parser, TYPE_OPERATOR);
+        parser_consume(parser, TYPE_OPERATOR, err);
         value = pow(value, parse_func(parser, err, angle_mode));
+        if ((*err) != MC4_ERR_NONE) return 0;
         current = parser_get_current(parser);
     }
     return value;
@@ -431,12 +439,13 @@ double parse_multdiv(struct Parser* parser, MC4_ErrorCode* err,
     while (current->type == TYPE_OPERATOR &&
            ((current->op == '*') || (current->op == '/'))) {
         if (current->op == '*') {
-            parser_consume(parser, TYPE_OPERATOR);
+            parser_consume(parser, TYPE_OPERATOR, err);
             value *= parse_exp(parser, err, angle_mode);
         } else {
-            parser_consume(parser, TYPE_OPERATOR);
+            parser_consume(parser, TYPE_OPERATOR, err);
             value /= parse_exp(parser, err, angle_mode);
         }
+        if ((*err) != MC4_ERR_NONE) return 0;
         current = parser_get_current(parser);
     }
     return value;
@@ -449,12 +458,13 @@ double parse_addsub(struct Parser* parser, MC4_ErrorCode* err,
     while (current->type == TYPE_OPERATOR &&
            ((current->op == '+') || (current->op == '-'))) {
         if (current->op == '+') {
-            parser_consume(parser, TYPE_OPERATOR);
+            parser_consume(parser, TYPE_OPERATOR, err);
             value += parse_multdiv(parser, err, angle_mode);
         } else {
-            parser_consume(parser, TYPE_OPERATOR);
+            parser_consume(parser, TYPE_OPERATOR, err);
             value -= parse_multdiv(parser, err, angle_mode);
         }
+        if ((*err) != MC4_ERR_NONE) return 0;
         current = parser_get_current(parser);
     }
     return value;
@@ -464,25 +474,24 @@ double parse_numpar(struct Parser* parser, MC4_ErrorCode* err,
                     enum AngleMode angle_mode) {
     struct Token* current = parser_get_current(parser);
     if (current->type == TYPE_NUMBER) {
-        parser_consume(parser, TYPE_NUMBER);
+        parser_consume(parser, TYPE_NUMBER, err);
         return current->value;
     } else if (current->type == TYPE_VARIABLE) {
         int key = letter_to_key(current->symbol);
         if (parser->vars->exists_hashmap[key]) {
-            parser_consume(parser, TYPE_VARIABLE);
+            parser_consume(parser, TYPE_VARIABLE, err);
             return parser->vars->values_hashmap[key];
         } else {
-            MLOG.error("Variable not found");
             *err = MC4_ERR_VAR_NOT_FOUND;
             return 0;
         }
     } else if (current->type == TYPE_PAR_LEFT) {
-        parser_consume(parser, TYPE_PAR_LEFT);
+        parser_consume(parser, TYPE_PAR_LEFT, err);
         double value = parse_addsub(parser, err, angle_mode);
-        parser_consume(parser, TYPE_PAR_RIGHT);
+        parser_consume(parser, TYPE_PAR_RIGHT, err);
         return value;
     } else {
-        MLOG.panic("Expected number or parenthesis");
+        *err = MC4_ERR_UNEXPECTED_TOKEN;
         return 0;
     }
 }
@@ -511,11 +520,10 @@ double parse_tokens(struct TokensList* list, struct MC4_VariableSet* vars,
 struct MC4_Result MC4_evaluate(const char* equ, struct MC4_VariableSet* vars,
                                struct MC4_Settings* settings) {
     struct MC4_Result result = new_result();
-    if (vars != NULL) {
-        load_vars(&result, vars);
-    }
+    if (vars != NULL) load_vars(&result, vars);
     MC4_ErrorCode* err = &result.err_code;
     struct TokensList tokens_list = tokenize(equ, err);
+    if ((*err) != MC4_ERR_NONE) return result;
     result.value =
         parse_tokens(&tokens_list, &result.vars, err, settings->angle_mode);
     return result;

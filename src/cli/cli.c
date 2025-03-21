@@ -196,17 +196,7 @@ static void handle_command(enum Command command, ArachneString* astr,
         break;
     case CMD_HELP: puts(HELP_STR); break;
     case CMD_QUIT: /* handled elsewere */ break;
-    default: /* expressions */
-        // {
-        //     const char* EXPRESSION = arachne_read_rest(astr);
-        //     MC4_Result result = MC4_evaluate(EXPRESSION, varset, settings);
-        //     if (MC4_error_occured(&result)) {
-        //         print_syntax_error(MC4_get_error_str(&result));
-        //     } else {
-        //         printf("%s = %lf\n", EXPRESSION, result.value);
-        //     }
-        // }
-        break;
+    default: /* expressions. handled elsewhere. */ break;
     }
 }
 
