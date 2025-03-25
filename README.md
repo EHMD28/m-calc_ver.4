@@ -18,18 +18,19 @@ Start `mcalc4` by typing in `mcalc4` command with no arguments. If there
 are arguments, they will be evaluted without the application actually
 starting. Once the application is started, the user will be prompted to 
 enter an input until they type `exit`, at which point the program will
-exit. 
+exit.  
 
 ### Demo
 ```
 $ mcalc4
 (mcalc4) cos(pi)
-cos(pi) = -1.0
-(mcalc4) set angle rad
+cos(pi) = -1.000000
+(mcalc4) set angle deg
+Setting angle mode to degrees
 (mcalc4) cos(pi)
-cos(pi) = 0.9984
+cos(pi) = 0.998497
 (mcalc4) cos(180)
-cos(180) = -1.0
+cos(180) = -1.000000
 (mcalc4) exit
 $ 
 ```
