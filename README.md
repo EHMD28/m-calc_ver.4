@@ -6,9 +6,11 @@ this in Rust because string parsing in C is physically painful).
 ## Building
 Requirements: `make` and a C-compiler such as `gcc` or `clang`.
 
-1. `git clone https://github.com/EHMD28/m-calc_ver.4.git`.
-2. `cd m-calc_ver.4`.
-3. `make app`.
+```
+git clone https://github.com/EHMD28/m-calc_ver.4.git
+cd m-calc_ver.4
+make release
+```
 
 ## Usage
 

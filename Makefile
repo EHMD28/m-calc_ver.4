@@ -9,7 +9,7 @@ TEST_DIR=tests
 .PHONY: tests clean release libs
 
 app: src/main.c mcalc4.o cli.o arachne.o
-	$(CC) -o mcalc4 src/main.c mcalc4.o cli.o arachne.o $(WFLAGS)
+	$(CC) -o mcalc4-debug src/main.c mcalc4.o cli.o arachne.o $(WFLAGS)
 
 mcalc4.o: $(MCALC4_DIR)/mcalc4.c
 	$(CC) -c $(MCALC4_DIR)/mcalc4.c $(WFLAGS)
@@ -30,7 +30,11 @@ tests: $(TEST_DIR)/tests.c $(TEST_DIR)/mcalc4_tests.c $(TEST_DIR)/cli_tests.c mc
 					$(WFLAGS)
 
 release: src/main.c
-	$(CC) -o mcalc4 src/main.c $(MCALC4_DIR)/mcalc4.c $(CLI_DIR)/cli.c -O3
+	$(CC) -o mcalc4 src/main.c\
+						$(MCALC4_DIR)/mcalc4.c\
+						$(CLI_DIR)/cli.c\
+						$(LIBS_DIR)/arachne-strlib/arachne.c\
+						-O3
 
 clean:
 	rm ./*.o ./mcalc4 ./tests
