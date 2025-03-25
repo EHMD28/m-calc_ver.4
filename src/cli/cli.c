@@ -122,7 +122,7 @@ handle_let_command(ArachneString* astr, struct MC4_VariableSet* varset,
     if (str_is_empty(expression)) return CPE_EXPECTED_EXPRESSION;
     MC4_Result result = MC4_evaluate(expression, varset, settings);
     set_var(varset, var_name, result.value);
-    MLOG.logf("Set variable '%c' to %lf", var_name, result.value);
+    printf("Set variable '%c' to %lf\n", var_name, result.value);
     arachne_free(astr);
     return CPE_NO_ERROR;
 }
@@ -159,10 +159,10 @@ handle_set_command(ArachneString* astr, struct MC4_Settings* settings) {
             if (VALUE == NULL) return CPE_EXPECTED_SET_VALUE;
             if (strcasecmp("rad", VALUE) == 0) {
                 settings->angle_mode = ANGLE_MODE_RAD;
-                MLOG.log("Set angle mode to radians.");
+                printf("Setting angle mode to radians");
             } else if (strcasecmp("deg", VALUE) == 0) {
                 settings->angle_mode = ANGLE_MODE_DEG;
-                MLOG.log("Set angle mode to degrees");
+                printf("Setting angle mode to degrees");
             } else {
                 return CPE_INVALID_SET_VALUE;
             }

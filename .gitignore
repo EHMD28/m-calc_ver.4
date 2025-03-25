@@ -36,7 +36,7 @@
 *.x86_64
 *.hex
 app-tests
-!tests/
+mcalc4-debug
 mcalc4
 !mcalc4/
 

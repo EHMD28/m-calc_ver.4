@@ -29,7 +29,7 @@ static int letter_to_key(char ch) {
     else if (islower(ch)) {
         return (ch - 'a') + MC4_VARSET_HALF_SIZE;
     } else {
-        MLOG.errorf("letter_to_key() - invalid letter: %c", ch);
+        // MLOG.errorf("letter_to_key() - invalid letter: %c", ch);
         return 0;
     }
 }
@@ -40,7 +40,7 @@ static char key_to_letter(int key) {
     } else if ((key >= MC4_VARSET_HALF_SIZE) && (key < MC4_VARSET_SIZE)) {
         return key - MC4_VARSET_HALF_SIZE + 'a';
     } else {
-        MLOG.errorf("key_to_letter() - invalid key: %d", key);
+        // MLOG.errorf("key_to_letter() - invalid key: %d", key);
         return 0;
     }
 }

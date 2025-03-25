@@ -37,4 +37,4 @@ release: src/main.c
 						-O3
 
 clean:
-	rm ./*.o ./mcalc4 ./tests
+	rm ./*.o ./mcalc4 ./tests ./mcalc4-debug
