@@ -1,6 +1,5 @@
 #include "cli.h"
 #include "../../libs/arachne-strlib/arachne_strlib.h"
-#include "../../libs/mlogging.h"
 #include "../mcalc4/mcalc4.h"
 #include "cli_types.h"
 #include <stdio.h>
@@ -159,10 +158,10 @@ handle_set_command(ArachneString* astr, struct MC4_Settings* settings) {
             if (VALUE == NULL) return CPE_EXPECTED_SET_VALUE;
             if (strcasecmp("rad", VALUE) == 0) {
                 settings->angle_mode = ANGLE_MODE_RAD;
-                printf("Setting angle mode to radians");
+                puts("Setting angle mode to radians");
             } else if (strcasecmp("deg", VALUE) == 0) {
                 settings->angle_mode = ANGLE_MODE_DEG;
-                printf("Setting angle mode to degrees");
+                puts("Setting angle mode to degrees");
             } else {
                 return CPE_INVALID_SET_VALUE;
             }
@@ -177,7 +176,7 @@ static void handle_set_command_error(enum CommandParseError error) {
     case CPE_UNKOWN_SETTING: print_syntax_error("Unkown setting.");
     case CPE_EXPECTED_SET_VALUE: print_syntax_error("Expected value"); break;
     case CPE_INVALID_SET_VALUE:
-        print_syntax_error("Invalid value for setting.");
+        print_syntax_error("Invalid value for setting");
         break;
     default: break;
     }
