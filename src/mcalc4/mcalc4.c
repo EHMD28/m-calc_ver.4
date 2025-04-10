@@ -104,8 +104,8 @@ double read_num(struct StringReader* reader, MC4_ErrorCode* err) {
 }
 
 bool is_func_str(const struct StringReader* reader) {
-    const char* FUNC_STRS[] = {"sin",    "cos",    "tan", "arcsin",
-                               "arccos", "arctan", "log", "ln"};
+    const char* FUNC_STRS[] = {"sin",    "cos", "tan", "arcsin", "arccos",
+                               "arctan", "log", "ln",  "sqrt"};
     const int size = sizeof(FUNC_STRS) / sizeof(FUNC_STRS[0]);
 
     for (int i = 0; i < size; i++) {
@@ -118,11 +118,12 @@ bool is_func_str(const struct StringReader* reader) {
 }
 
 enum FuncType funcstr_to_type(struct StringReader* reader) {
-    const char* FUNC_STRS[] = {"sin",    "cos",    "tan", "arcsin",
-                               "arccos", "arctan", "log", "ln"};
+    const char* FUNC_STRS[] = {"sin",    "cos", "tan", "arcsin", "arccos",
+                               "arctan", "log", "ln",  "sqrt"};
 
-    const enum FuncType FUNC_TYPES[] = {FN_SIN,  FN_COS,  FN_TAN,    FN_ASIN,
-                                        FN_ACOS, FN_ATAN, FN_LOG_10, FN_LOG_E};
+    const enum FuncType FUNC_TYPES[] = {FN_SIN,    FN_COS,   FN_TAN,
+                                        FN_ASIN,   FN_ACOS,  FN_ATAN,
+                                        FN_LOG_10, FN_LOG_E, FN_SQRT};
 
     const int FN_STRS_SIZE = sizeof(FUNC_STRS) / sizeof(FUNC_STRS[0]);
     const int FN_TYPES_SIZE = sizeof(FUNC_TYPES) / sizeof(FUNC_TYPES[0]);
@@ -368,6 +369,7 @@ double parse_func(struct Parser* parser, MC4_ErrorCode* err,
         case FN_ATAN: return atan(value);
         case FN_LOG_10: return log10(value);
         case FN_LOG_E: return log(value);
+        case FN_SQRT: return sqrt(value);
         }
     } else if ((current->type == TYPE_PAR_LEFT) ||
                (current->type == TYPE_NUMBER) ||

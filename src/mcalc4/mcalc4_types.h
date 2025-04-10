@@ -32,6 +32,7 @@ enum FuncType {
     FN_ATAN,
     FN_LOG_10,
     FN_LOG_E,
+    FN_SQRT
 };
 
 struct Token {
