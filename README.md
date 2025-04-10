@@ -42,6 +42,7 @@ capitalization.
 * Operators
     * `+`, `-`, `*`, `/`, and `^`.
 * Functions
+    * `sqrt`
     * `sin`, `cos`, and `tan`.
     * `arcsin`, `arccos`, and `arcctan`.
     * `log` (base 10) and `ln`.
